@@ -5,6 +5,7 @@ import {
   ModelDescription,
   Tool,
   ToolCallState,
+  TextMessagePart,
 } from "core";
 import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
@@ -28,6 +29,7 @@ import {
 import { AppThunkDispatch, RootState, ThunkApiType } from "../store";
 import { constructMessages } from "../util/constructMessages";
 
+import { getSystemMessage } from "core/llm/rules/getSystemMessageWithRules";
 import { modelSupportsNativeTools } from "core/llm/toolSupport";
 import { addSystemMessageToolsToSystemMessage } from "core/tools/systemMessageTools/buildToolsSystemMessage";
 import { interceptSystemToolCalls } from "core/tools/systemMessageTools/interceptSystemToolCalls";
@@ -146,15 +148,7 @@ async function handleToolCallExecution(
         dispatch(
           updateToolCallOutput({
             toolCallId: toolCallState.toolCallId,
-            contextItems: [
-              {
-                icon: "problems",
-                name: "Security Policy Violation",
-                description: "Command Disabled",
-                content: `This command has been disabled by security policy:\n\n${command}\n\nThis command cannot be executed as it may pose a security risk.`,
-                hidden: false,
-              },
-            ],
+            
           }),
         );
         return false;
@@ -228,11 +222,12 @@ export const streamNormalInput = createAsyncThunk<
   void,
   {
     legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
+    systemMessages?: TextMessagePart[];
   },
   ThunkApiType
 >(
   "chat/streamNormalInput",
-  async ({ legacySlashCommandData }, { dispatch, extra, getState }) => {
+  async ({ legacySlashCommandData, systemMessages }, { dispatch, extra, getState }) => {
     const state = getState();
     const selectedChatModel = selectSelectedChatModel(state);
 
@@ -288,7 +283,7 @@ export const streamNormalInput = createAsyncThunk<
 
     const { messages, appliedRules, appliedRuleIndex } = constructMessages(
       withoutMessageIds,
-      systemMessage,
+      getSystemMessage({ baseSystemMessage: systemMessage, systemMessages: systemMessages }),
       state.config.config.rules,
       state.ui.ruleSettings,
       systemToolsFramework,
