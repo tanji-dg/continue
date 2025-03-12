@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "paths": {
+      "wink-nlp-utils": ["../core/types/wink-nlp-utils.d.ts"]
+    },
     "module": "commonjs",
     "target": "ES2022",
     "outDir": "out",
