@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // プロダクションビルド専用の基本最適化のみ適用
+    "sourceMap": false,
+    "declaration": false,
+    "declarationMap": false,
+    "removeComments": true,
+    // 厳しい型チェックは一時的にコメントアウト
+    // "noImplicitReturns": true,
+    // "noFallthroughCasesInSwitch": true
+    // より厳密な型チェックは将来的に段階的に追加
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "exactOptionalPropertyTypes": true,
+    // "noImplicitOverride": true
+  }
+}
