@@ -16,7 +16,8 @@
     "noEmitOnError": false,
     "types": ["node"],
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "typeRoots": ["./node_modules/@types"]
     // "sourceMap": true
   },
   "include": ["src/**/*"]
