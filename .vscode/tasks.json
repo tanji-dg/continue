@@ -105,6 +105,33 @@
       ]
     },
     {
+      "label": "vscode-extension:upload-vsix",
+      "dependsOn": [
+          //"vscode-extension:esbuild",
+          //"vscode-extension:package"
+      ],
+      "dependsOrder": "sequence",  // 順次実行を明示
+      "type": "shell",
+      "command": "Copy-Item -Path './build/*.vsix' -Destination '\\\\d-in\\DATA受渡\\スロット開発部システム開発U基盤開発G\\tanji'",
+      "options": {
+        "cwd": "${workspaceFolder}/extensions/vscode"
+      },
+      "problemMatcher": [
+        {
+          "pattern": [
+            {
+              "regexp": "> (.*?):([0-9]+):([0-9]+): (warning|error): (.+)$",
+              "file": 1,
+              "line": 2,
+              "column": 3,
+              "severity": 4,
+              "message": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
       "label": "vscode-extension:continue-ui:build",
       "type": "shell",
       "command": "node",
@@ -172,7 +199,11 @@
             "endsPattern": "."
           }
         }
-      ]
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "label": "binary:esbuild",
