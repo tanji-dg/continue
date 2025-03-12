@@ -403,6 +403,9 @@ void (async () => {
     "out/xhr-sync-worker.js",
   );
 
+  // Wait briefly to ensure all file operations are complete
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
   // Validate the all of the necessary files are present
   validateFilesPresent([
     // Queries used to create the index for @code context provider

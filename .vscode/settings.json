@@ -45,7 +45,7 @@
     "extensions/.continue-debug": true
     // "sync/**": true
   },
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "eslint.workingDirectories": ["./core"],
   "typescript.tsdk": "node_modules/typescript/lib",
   "conventionalCommits.showNewVersionNotes": false,
@@ -53,4 +53,9 @@
   "conventionalCommits.promptFooter": false,
   "conventionalCommits.promptScopes": true,
   "conventionalCommits.scopes": ["reg"]
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "cmake.ignoreCMakeListsMissing": true,
 }
