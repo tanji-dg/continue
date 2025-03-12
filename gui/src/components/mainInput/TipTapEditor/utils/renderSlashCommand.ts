@@ -1,4 +1,4 @@
-import { MessagePart, RangeInFile, SlashCommandDescWithSource } from "core";
+import { MessagePart, RangeInFile, SlashCommandDescWithSource, SlashCommandWithSource, TextMessagePart } from "core";
 import { stripImages } from "core/util/messageContent";
 import posthog from "posthog-js";
 import { IIdeMessenger } from "../../../../context/IdeMessenger";
@@ -23,11 +23,13 @@ export async function renderSlashCommandPrompt(
     input: string;
   };
   contextRequests: GetContextRequest[];
+  systemMessageParts: TextMessagePart[];
 }> {
   const NO_COMMAND = {
     slashedParts: parts,
     legacyCommandWithInput: undefined,
     contextRequests: [],
+    systemMessageParts: []
   };
   if (!commandName) {
     return NO_COMMAND;
@@ -61,6 +63,7 @@ export async function renderSlashCommandPrompt(
     : undefined;
 
   const contextRequests: GetContextRequest[] = [];
+  const systemMessageParts: TextMessagePart[] = [];
 
   switch (command.source) {
     case "built-in-legacy":
@@ -111,6 +114,13 @@ export async function renderSlashCommandPrompt(
         );
         contextRequests.push(...promptFileCtxRequests);
         renderedPrompt = [command.prompt, userInput].join("\n\n").trim();
+        const t = command as SlashCommandWithSource;
+        if (t.overrideSystemMessage) {
+          systemMessageParts.push({
+            type: "text",
+            text: t.overrideSystemMessage
+          });
+        }
       }
 
       if (renderedPrompt) {
@@ -152,5 +162,6 @@ export async function renderSlashCommandPrompt(
     slashedParts,
     legacyCommandWithInput,
     contextRequests,
+    systemMessageParts,
   };
 }
