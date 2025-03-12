@@ -3,6 +3,8 @@ import { exec } from "node:child_process";
 
 import { Range } from "core";
 import { EXTENSION_NAME } from "core/control-plane/env";
+import { SupportSJIS } from "core/util/sjis";
+import * as iconv from 'iconv-lite';
 import * as URI from "uri-js";
 import * as vscode from "vscode";
 
@@ -347,7 +349,7 @@ class VsCodeIde implements IDE {
       terminal = vscode.window.createTerminal(options?.terminalName);
     }
     terminal.show();
-    terminal.sendText(command, false);
+    terminal.sendText(command + (command.endsWith('\n') ? '' : '\n'), false);
   }
 
   async saveFile(fileUri: string): Promise<void> {
@@ -385,7 +387,7 @@ class VsCodeIde implements IDE {
       }
 
       const fileStats = await this.ideUtils.stat(uri);
-      if (fileStats === null || fileStats.size > 10 * VsCodeIde.MAX_BYTES) {
+      if (fileStats === null || fileStats.size > 10 * SupportSJIS.MAX_BYTES) {
         return "";
       }
 
@@ -394,10 +396,17 @@ class VsCodeIde implements IDE {
         return "";
       }
 
+      // Uint8Array を Buffer に変換
+      const buffer = Buffer.from(bytes);
+
+      // エンコーディングを自動検出
+      const detectedEncoding = SupportSJIS.detectEncoding(buffer);
+      // console.log(`Detected encoding for ${uri}: ${detectedEncoding}`);
+
+      const decoded = iconv.decode(buffer, detectedEncoding);
+
       // Truncate the buffer to the first MAX_BYTES
-      const truncatedBytes = bytes.slice(0, VsCodeIde.MAX_BYTES);
-      const contents = new TextDecoder().decode(truncatedBytes);
-      return contents;
+      return decoded.slice(0, SupportSJIS.MAX_BYTES);
     } catch (e) {
       return "";
     }
@@ -534,27 +543,27 @@ class VsCodeIde implements IDE {
       );
       return results.map((result) => vscode.workspace.asRelativePath(result));
     } else {
-      const results: string[] = [];
-      for (const dir of await this.getWorkspaceDirs()) {
-        const dirResults = await this.runRipgrepQuery(dir, [
-          "--files",
-          "--iglob",
-          pattern,
-          "--ignore-file",
-          ".continueignore",
-          "--ignore-file",
-          ".gitignore",
-          ...(maxResults ? ["--max-count", String(maxResults)] : []),
-        ]);
+    const results: string[] = [];
+    for (const dir of await this.getWorkspaceDirs()) {
+      const dirResults = await this.runRipgrepQuery(dir, [
+        "--files",
+        "--iglob",
+        pattern,
+        "--ignore-file",
+        ".continueignore",
+        "--ignore-file",
+        ".gitignore",
+        ...(maxResults ? ["--max-count", String(maxResults)] : []),
+      ]);
 
-        results.push(dirResults);
-      }
+      results.push(dirResults);
+    }
 
-      const allResults = results.join("\n").split("\n");
-      if (maxResults) {
-        // In the case of multiple workspaces, maxResults will be applied to each workspace
-        // And then the combined results will also be truncated
-        return allResults.slice(0, maxResults);
+    const allResults = results.join("\n").split("\n");
+    if (maxResults) {
+      // In the case of multiple workspaces, maxResults will be applied to each workspace
+      // And then the combined results will also be truncated
+      return allResults.slice(0, maxResults);
       } else {
         return allResults;
       }

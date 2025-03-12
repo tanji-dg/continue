@@ -132,7 +132,9 @@ export async function getAllPromptFiles(
   ).flat();
 
   // Also read from ~/.continue/.prompts
-  promptFiles.push(...readAllGlobalPromptFiles());
+  for (const t of readAllGlobalPromptFiles()) {
+    promptFiles.push(t);
+  }
 
   // Add hardcoded init prompt
   promptFiles.push({
@@ -140,13 +142,5 @@ export async function getAllPromptFiles(
     content: INIT_PROMPT_CONTENT,
   });
 
-  return await Promise.all(
-    promptFiles.map(async (file) => {
-      if (file.path.startsWith("builtin:")) {
-        return file;
-      }
-      const content = await ide.readFile(file.path);
-      return { path: file.path, content };
-    }),
-  );
+  return promptFiles;
 }

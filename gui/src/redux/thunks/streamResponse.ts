@@ -58,6 +58,7 @@ export const streamResponseThunk = createAsyncThunk<
           selectedCode,
           content,
           legacyCommandWithInput,
+          systemMessages,
         } = await resolveEditorContent({
           editorState,
           modifiers,
@@ -116,6 +117,7 @@ export const streamResponseThunk = createAsyncThunk<
                     selectedCode,
                   }
                 : undefined,
+              systemMessages: systemMessages
             }),
           ),
         );
