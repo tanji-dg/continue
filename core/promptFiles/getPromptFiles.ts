@@ -9,6 +9,7 @@ import { IDE } from "..";
 import { walkDir } from "../indexing/walkDir";
 import { getContinueGlobalPath, readAllGlobalPromptFiles } from "../util/paths";
 import { joinPathsToUri } from "../util/uri";
+import { INIT_PROMPT_CONTENT } from "./initPrompt";
 
 export async function getPromptFilesFromDir(
   ide: IDE,
@@ -70,11 +71,18 @@ export async function getAllPromptFiles(
   );
   promptFiles.push(...promptFilesFromRulesDirectory);
 
-  const result = await Promise.all(
+  promptFiles.push(...promptFilesFromRulesDirectory);
+
+  // Add hardcoded init prompt
+  promptFiles.push({
+    path: "builtin:/init.prompt",
+    content: INIT_PROMPT_CONTENT,
+  });
+
+  return await Promise.all(
     promptFiles.map(async (file) => {
       const content = await ide.readFile(file.path);
       return { path: file.path, content };
     }),
   );
-  return result;
 }
