@@ -2,6 +2,7 @@ import { minimatch } from "minimatch";
 import {
   ContextItemWithId,
   RuleWithSource,
+  TextMessagePart,
   ToolResultChatMessage,
   UserChatMessage,
 } from "../..";
@@ -327,6 +328,23 @@ export const getApplicableRules = (
 export function getRuleId(rule: RuleWithSource): string {
   return rule.slug ?? rule.sourceFile ?? rule.name ?? rule.source;
 }
+
+export const getSystemMessage = ({
+  baseSystemMessage,
+  systemMessages,
+}: {
+  baseSystemMessage: string;
+  systemMessages: TextMessagePart[] | undefined;
+}): string => {
+  if (!systemMessages) {
+    return baseSystemMessage;
+  }
+  const messageTexts = systemMessages.map(msg => msg.text);
+  if (baseSystemMessage) {
+    messageTexts.unshift(baseSystemMessage);
+  }
+  return messageTexts.join('\n\n');
+};
 
 export const getSystemMessageWithRules = ({
   baseSystemMessage,
