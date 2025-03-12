@@ -1,6 +1,11 @@
+import { SyntaxNode } from "web-tree-sitter";
 import { ChunkWithoutID } from "../..";
 import { cleanupAsyncEncoders, countTokensAsync } from "../../llm/countTokens";
+import { getParserForFile } from "../../util/treeSitter";
 import { codeChunker } from "./code";
+
+import fs from "node:fs";
+import path from "node:path";
 
 async function genToArr<T>(generator: AsyncGenerator<T>): Promise<T[]> {
   const result: T[] = [];
@@ -16,7 +21,7 @@ async function genToStrs(
   return (await genToArr(generator)).map((chunk) => chunk.content);
 }
 
-describe.skip("codeChunker", () => {
+describe("codeChunker", () => {
   test("should return empty array if file empty", async () => {
     const chunks = await genToStrs(codeChunker("test.ts", "", 100));
     expect(chunks).toEqual([]);
@@ -59,7 +64,7 @@ describe.skip("codeChunker", () => {
         .join("\n") +
       "\n\n";
 
-    console.log(file);
+    //console.log(file);
 
     const chunks = await genToStrs(codeChunker("test.py", file, 200));
     expect(chunks.length).toBeGreaterThan(1);
@@ -70,6 +75,143 @@ describe.skip("codeChunker", () => {
     expect(chunks).toContain('def method1():\n        return "Hello, 1!"');
     expect(chunks).toContain('def method20():\n        return "Hello, 20!"');
   });
+
+  test("codeChunkerの使用法の確認", async () => {
+    const file = "print('Hello, World!')";
+    const chunks = await genToStrs(codeChunker("test.py", file, 10));
+    expect(chunks).toEqual(["print('Hello, World!')"]);
+  });
+
+  test("C言語ヘッダーの動作確認。コメントもchunkに含む", async () => {
+    const extraLine = "// This is a comment";
+    const myClass = "void init();\n";
+    const myFunction = "void init() {\n    return;\n}";
+
+    const file =
+      Array(100).fill(extraLine).join("\n") +
+      "\n\n" +
+      myClass +
+      "\n\n" +
+      myFunction +
+      "\n\n" +
+      Array(100).fill(extraLine).join("\n");
+    //console.log(file);
+
+    expect(countTokens(extraLine)).toEqual(6);
+
+    const chunks = await genToStrs(codeChunker("test.h", file, 200));
+    expect(chunks.length).toBeGreaterThan(1);
+    //console.log(chunks);
+    //expect(chunks.length).toEqual(3);
+    //expect(chunks).toContain(myClass);
+    expect(chunks).toContain(myFunction);
+    expect(chunks[0]).toContain(extraLine);
+  });
+
+  test("日本語コメントを含むヘッダーの動作確認", async () => {
+    const extraLine = "// 日本語のCommentのテスト";
+
+    const file =
+      Array(3).fill(extraLine).join("\n");
+
+    expect(countTokens(extraLine)).toEqual(12);
+    expect(countTokens(file)).toEqual(12 * 3);
+
+    const genChunks = await genToArr(codeChunker("test.h", file, 200));
+    expect(genChunks.length).toEqual(1);
+    expect(genChunks[0].startLine).toEqual(0);
+    expect(genChunks[0].endLine).toEqual(2);
+
+    let chunks = await genToStrs(codeChunker("test.h", file, 200));
+    expect(chunks.length).toEqual(1);
+
+    chunks = await genToStrs(codeChunker("test.h", file, 12 * 3 + 1));
+    expect(chunks.length).toEqual(1);
+
+    chunks = await genToStrs(codeChunker("test.h", file, 12 * 3));
+    expect(chunks.length).toEqual(2);
+  });
+
+  function printTree(node: SyntaxNode, indent = '') {
+    process.stdout.write(`${indent}${node.type}: `);
+    process.stdout.write(`${indent}${node.text}\n`);
+    if (node.namedChildren) {
+      node.namedChildren.forEach(child => printTree(child, `${indent}  `));
+    }
+  }
+
+  test("print tree of test.c file", async () => {
+    const commentI = (i: number) =>
+      `// ${i} This is a comment`;
+
+    const extraLine = "// This is a comment";
+    const myDefine = "#define PI 3.14 // Define a constant value for PI\n";
+    const myInclude = "#include <stdio.h>\n";
+    const myClass = "void init();\n";
+    const myFunction = "void init() {\n    return;\n}";
+
+    const file =
+      Array(2).fill(0).map((_, i) => commentI(i + 1)).join("\n") +
+      "\n\n" +
+      myDefine +
+      "\n\n" +
+      myInclude +
+      "\n\n" +
+      myClass +
+      "\n\n" +
+      myFunction +
+      "\n\n" +
+      Array(2).fill(0).map((_, i) => commentI(2 + i + 1)).join("\n");
+    console.log(file);
+
+    const parser = await getParserForFile("test.h");
+    if (!parser) throw new Error("Parser not found");
+    const tree = parser.parse(file);
+
+    // タイトルを表示
+    console.log('Parsing Tree:');
+    printTree(tree.rootNode);
+
+    let chunks = await genToStrs(codeChunker("test.h", file, 20));
+    expect(chunks.length).toBeGreaterThan(1);
+    //expect(chunks.length).toEqual(4);
+    //expect(chunks).toContain(myClass);
+    console.log(chunks);
+    expect(chunks[0]).toContain(commentI(1));
+    expect(chunks[1]).toContain(commentI(2));
+    expect(chunks[2]).toContain(myFunction);
+    expect(chunks[3]).toContain(commentI(3));
+    expect(chunks[4]).toContain(commentI(4));
+  });
+
+  test("DrvLamp.c chunking", async () => {
+    const testFilePath = path.join(__dirname, "../drv", "DrvLamp.c");
+    const testFileContents = fs.readFileSync(testFilePath, "binary");
+
+    const chunks = await genToStrs(codeChunker("DrvLamp.c", testFileContents, 200));
+    expect(chunks.length).toBeGreaterThan(1);
+
+    const parser = await getParserForFile("test.h");
+    if (!parser) throw new Error("Parser not found");
+    const tree = parser.parse(testFileContents);
+
+    //console.log('Parsing Tree:');
+    //printTree(tree.rootNode);
+
+    //for (const c of chunks) {
+    //  console.log("chunk\n");
+    //  console.log(c);
+   // }
+
+    //expect(chunks.length).toEqual(4);
+    //expect(chunks).toContain(myClass);
+    expect(chunks[0].length).toBeGreaterThan(1);
+    expect(chunks[1].length).toBeGreaterThan(1);
+    //expect(chunks[1]).toContain(myFunction);
+    //expect(chunks[2]).toContain(extraLine);
+    //expect(chunks[3]).toContain(extraLine);
+  });
+
 });
 
 async function collectContents(
