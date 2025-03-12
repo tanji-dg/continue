@@ -4,6 +4,8 @@ import { exec } from "node:child_process";
 import { Range } from "core";
 import { EXTENSION_NAME } from "core/control-plane/env";
 import { DEFAULT_IGNORES, defaultIgnoresGlob } from "core/indexing/ignore";
+import { SupportSJIS } from "core/util/sjis";
+import * as iconv from 'iconv-lite';
 import * as URI from "uri-js";
 import * as vscode from "vscode";
 
@@ -348,7 +350,7 @@ class VsCodeIde implements IDE {
       terminal = vscode.window.createTerminal(options?.terminalName);
     }
     terminal.show();
-    terminal.sendText(command, false);
+    terminal.sendText(command + (command.endsWith('\n') ? '' : '\n'), false);
   }
 
   async saveFile(fileUri: string): Promise<void> {
@@ -386,7 +388,7 @@ class VsCodeIde implements IDE {
       }
 
       const fileStats = await this.ideUtils.stat(uri);
-      if (fileStats === null || fileStats.size > 10 * VsCodeIde.MAX_BYTES) {
+      if (fileStats === null || fileStats.size > 10 * SupportSJIS.MAX_BYTES) {
         return "";
       }
 
@@ -395,10 +397,17 @@ class VsCodeIde implements IDE {
         return "";
       }
 
+      // Uint8Array を Buffer に変換
+      const buffer = Buffer.from(bytes);
+
+      // エンコーディングを自動検出
+      const detectedEncoding = SupportSJIS.detectEncoding(buffer);
+      // console.log(`Detected encoding for ${uri}: ${detectedEncoding}`);
+
+      const decoded = iconv.decode(buffer, detectedEncoding);
+
       // Truncate the buffer to the first MAX_BYTES
-      const truncatedBytes = bytes.slice(0, VsCodeIde.MAX_BYTES);
-      const contents = new TextDecoder().decode(truncatedBytes);
-      return contents;
+      return decoded.slice(0, SupportSJIS.MAX_BYTES);
     } catch (e) {
       return "";
     }
@@ -493,7 +502,7 @@ class VsCodeIde implements IDE {
         const filePath = vscode.workspace.asRelativePath(file);
         const fileDir = filePath
           .replace(/\\/g, "/")
-          .replace(/\/$/, "")
+          .replace(/\$\/$/, "")
           .split("/")
           .slice(0, -1)
           .join("/");
@@ -610,8 +619,6 @@ class VsCodeIde implements IDE {
       const matches = Array.from(allResults.matchAll(/(\n--|\n\.\/)/g));
       if (matches.length > maxResults) {
         return allResults.substring(0, matches[maxResults].index);
-      } else {
-        return allResults;
       }
     } else {
       return allResults;
