@@ -8,9 +8,11 @@ import { ConfigYaml, DevEventName } from "@continuedev/config-yaml";
 import * as JSONC from "comment-json";
 import dotenv from "dotenv";
 
+import * as iconv from 'iconv-lite';
 import { IdeType, SerializedContinueConfig } from "../";
 import { defaultConfig, defaultConfigJetBrains } from "../config/default";
 import Types from "../config/types";
+import { SupportSJIS } from "./sjis";
 
 dotenv.config();
 
@@ -25,7 +27,7 @@ const CONTINUE_GLOBAL_DIR = (() => {
   return path.join(os.homedir(), ".continue");
 })();
 
-// export const DEFAULT_CONFIG_TS_CONTENTS = `import { Config } from "./types"\n\nexport function modifyConfig(config: Config): Config {
+// export const DEFAULT_CONFIG_TS_CONTENTS = `import { Config } from ".//types"\n\nexport function modifyConfig(config: Config): Config {
 //   return config;
 // }`;
 
@@ -395,12 +397,12 @@ export function getGlobalPromptsPath(): string {
 
 export function readAllGlobalPromptFiles(
   folderPath: string = getGlobalPromptsPath(),
-): { path: string; content: string }[] {
+): Array<{ path: string; content: string }> { // プロパティ順序を変更
   if (!fs.existsSync(folderPath)) {
     return [];
   }
   const files = fs.readdirSync(folderPath);
-  const promptFiles: { path: string; content: string }[] = [];
+  const promptFiles: Array<{ path: string; content: string }> = []; // 型注釈の順序も変更
   files.forEach((file) => {
     const filepath = path.join(folderPath, file);
     const stats = fs.statSync(filepath);
@@ -409,8 +411,14 @@ export function readAllGlobalPromptFiles(
       const nestedPromptFiles = readAllGlobalPromptFiles(filepath);
       promptFiles.push(...nestedPromptFiles);
     } else if (file.endsWith(".prompt")) {
-      const content = fs.readFileSync(filepath, "utf8");
-      promptFiles.push({ path: filepath, content });
+      const bytes = fs.readFileSync(filepath);
+      const detectedEncoding = SupportSJIS.detectEncoding(bytes);
+      const decoded = iconv.decode(bytes, detectedEncoding);
+
+      promptFiles.push({ 
+        path: filepath,  // pathを先に
+        content: decoded // contentを後に
+      });
     }
   });
 
