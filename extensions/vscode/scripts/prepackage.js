@@ -221,6 +221,19 @@ void (async () => {
         }
       },
     );
+    ncp(
+      path.join(__dirname, "../../../core/node_modules/kuromoji/dict"),
+      path.join(__dirname, "../out/kuromoji_dict"),
+      { dereference: true },
+      (error) => {
+        if (error) {
+          console.warn("[error] Error copying kuromoji dict files", error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      },
+    );
   });
 
   const filesToCopy = [
