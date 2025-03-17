@@ -1,4 +1,6 @@
 // @ts-ignore
+import kuromoji from "kuromoji";
+import * as path from 'path';
 import nlp from "wink-nlp-utils";
 
 import {
@@ -57,10 +59,106 @@ export interface IRetrievalPipeline {
   run(args: RetrievalPipelineRunArguments): Promise<Chunk[]>;
 }
 
+class NLPProcessor {
+
+  private tokenizer: kuromoji.Tokenizer<any> | null = null;
+
+  private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<any>>;
+
+  constructor() {
+    // __dirname を使用してスクリプトファイルのディレクトリを取得
+    const dicPath: string = path.join(__dirname, 'kuromoji_dict');
+    console.log(dicPath);
+
+    // Promiseを作成してtokenizerのbuildをラップする
+    this.tokenizerBuildPromise = new Promise((resolve, reject) => {
+      kuromoji.builder({ dicPath: dicPath }).build((err: any, tokenizer: kuromoji.Tokenizer<any>) => {
+        if (err) {
+          console.error("Kuromoji tokenizer error:", err);
+          reject(err); // エラーが発生したらPromiseをreject
+          return;
+        }
+        this.tokenizer = tokenizer;
+        console.log("Kuromoji tokenizer initialized.");
+        resolve(tokenizer); // 成功したらPromiseをresolve
+      });
+    });
+  }
+
+  // tokenizerのbuildが完了するまで待つ関数
+  async waitForTokenizerBuild(): Promise<void> {
+    if (!this.tokenizer) {
+      await this.tokenizerBuildPromise;
+    }
+  }
+
+  private isJapanese(text: string): boolean {
+    return /[一-龠ぁ-んァ-ン]/.test(text);
+  }
+
+  getCleanedTrigrams(query: string): string[] {
+    if (this.isJapanese(query)) {
+      return this.getJapaneseTrigrams(query);
+    } else {
+      return this.getEnglishTrigrams(query);
+    }
+  }
+
+  private getJapaneseTrigrams(query: string): string[] {
+    if (!this.tokenizer) throw new Error("Tokenizer not initialized");
+
+    // 1. 形態素解析
+    const tokens = this.tokenizer.tokenize(query);
+
+    // 2. 名詞・動詞を抽出
+    const words = tokens
+      .filter(token => token.pos === "名詞" || token.pos === "動詞")
+      .map(token => token.basic_form || token.surface_form);
+
+    // 3. ストップワードを除去
+    const stopwords = new Set(["の", "は", "が", "を", "に", "で", "と", "も", "する", "なる"]);
+    const filteredWords = words.filter(word => !stopwords.has(word));
+
+    // 4. 重複削除
+    const uniqueWords = [...new Set(filteredWords)];
+
+    // 5. 3-gram の生成
+    return uniqueWords.length < 3
+      ? uniqueWords  // 2単語以下ならそのまま配列を返す
+      : uniqueWords.map((_, i, arr) => arr.slice(i, i + 3))  // 3-gram 配列の生成
+        .filter(trigram => trigram.length === 3)  // 3単語のものだけを抽出
+        .flat();  // フラット化して1次元の配列にする
+  }
+
+  private escapeFtsQueryString(query: string): string {
+    const escapedDoubleQuotes = query.replace(/"/g, '""');
+    return `"${escapedDoubleQuotes}"`;
+  }
+
+  private getEnglishTrigrams(query: string): string[] {
+    let text = nlp.string.removeExtraSpaces(query);
+    text = nlp.string.stem(text);
+
+    let tokens = nlp.string
+      .tokenize(text, true)
+      .filter((token: any) => token.tag === "word")
+      .map((token: any) => token.value);
+
+    tokens = nlp.tokens.removeWords(tokens);
+    tokens = nlp.tokens.setOfWords(tokens);
+
+    const cleanedTokens = [...tokens].join(" ");
+    const trigrams = nlp.string.ngram(cleanedTokens, 3);
+
+    return trigrams.map(this.escapeFtsQueryString);
+  }
+}
+
 export default class BaseRetrievalPipeline implements IRetrievalPipeline {
   private ftsIndex = new FullTextSearchCodebaseIndex();
   private lanceDbIndex: LanceDbIndex | null = null;
   private lanceDbInitPromise: Promise<void> | null = null;
+  private processor = new NLPProcessor();
 
   constructor(protected readonly options: RetrievalPipelineOptions) {
     void this.initLanceDb();
@@ -98,26 +196,7 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
   private getCleanedTrigrams(
     query: RetrievalPipelineRunArguments["query"],
   ): string[] {
-    let text = nlp.string.removeExtraSpaces(query);
-    text = nlp.string.stem(text);
-
-    let tokens = nlp.string
-      .tokenize(text, true)
-      .filter((token: any) => token.tag === "word")
-      .map((token: any) => token.value);
-
-    tokens = nlp.tokens.removeWords(tokens);
-    tokens = nlp.tokens.setOfWords(tokens);
-
-    const cleanedTokens = [...tokens].join(" ");
-    const trigrams = nlp.string.ngram(cleanedTokens, 3);
-
-    return trigrams.map(this.escapeFtsQueryString);
-  }
-
-  private escapeFtsQueryString(query: string): string {
-    const escapedDoubleQuotes = query.replace(/"/g, '""');
-    return `"${escapedDoubleQuotes}"`;
+    return this.processor.getCleanedTrigrams(query);
   }
 
   protected async retrieveFts(
@@ -127,6 +206,8 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
     if (args.query.trim() === "") {
       return [];
     }
+
+    await this.processor.waitForTokenizerBuild();
 
     const tokens = this.getCleanedTrigrams(args.query).join(" OR ");
 
@@ -203,10 +284,7 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
   }
 
   protected async retrieveWithTools(input: string): Promise<Chunk[]> {
-    const toolSelectionPrompt = `Given the following user input: "${input}"
-
-Available tools:
-${AVAILABLE_TOOLS.map((tool) => {
+    const toolSelectionPrompt = `Given the following user input: \"${input}\"\n\nAvailable tools:\n${AVAILABLE_TOOLS.map((tool) => {
   const requiredParams = tool.function.parameters?.required || [];
   const properties = tool.function.parameters?.properties || {};
   const paramDescriptions = requiredParams
@@ -215,19 +293,8 @@ ${AVAILABLE_TOOLS.map((tool) => {
     )
     .join(", ");
 
-  return `- ${tool.function.name}: ${tool.function.description}
-  Required arguments: ${paramDescriptions || "none"}`;
-}).join("\n")}
-
-Determine which tools should be used to answer this query. You should feel free to use multiple tools when they would be helpful for comprehensive results. Respond ONLY a JSON object containing the following and nothing else:
-{
-  "tools": [
-    {
-      "name": "<tool_name>",
-      "args": { "<required_parameter_name>": "<required_parameter_value>" }
-    }
-  ]
-}`;
+  return `- ${tool.function.name}: ${tool.function.description}\n  Required arguments: ${paramDescriptions || "none"}`;
+}).join("\n")}\n\nDetermine which tools should be used to answer this query. You should feel free to use multiple tools when they would be helpful for comprehensive results. Respond ONLY a JSON object containing the following and nothing else:\n{\n  "tools": [\n    {\n      "name": "<tool_name>",\n      "args": { "<required_parameter_name>": "<required_parameter_value>" }\n    }\n  ]\n}`;
 
     // Get LLM response for tool selection
     const toolSelectionResponse = await this.options.llm.chat(
@@ -295,8 +362,8 @@ Determine which tools should be used to answer this query. You should feel free 
         content: contextItem.content,
         startLine: -1,
         endLine: -1,
-        digest: `file:///${cleanedFilepath}`,
-        filepath: `file:///${cleanedFilepath}`,
+        digest: `file:\/\/\/${cleanedFilepath}`,
+        filepath: `file:\/\/\/${cleanedFilepath}`,
         index: i,
       });
     }
