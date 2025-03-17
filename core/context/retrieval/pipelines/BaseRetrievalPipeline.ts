@@ -1,3 +1,5 @@
+import kuromoji from "kuromoji";
+import * as path from 'path';
 import nlp from "wink-nlp-utils";
 
 import {
@@ -57,6 +59,36 @@ export interface IRetrievalPipeline {
 }
 
 class NLPProcessor {
+  private tokenizer: kuromoji.Tokenizer<kuromoji.IpadicFeatures> | null = null;
+
+  private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<kuromoji.IpadicFeatures>>;
+
+  constructor() {
+    // __dirname を使用してスクリプトファイルのディレクトリを取得
+    const dicPath: string = path.join(__dirname, 'kuromoji_dict');
+    console.log(dicPath);
+
+    // Promiseを作成してtokenizerのbuildをラップする
+    this.tokenizerBuildPromise = new Promise((resolve, reject) => {
+      kuromoji.builder({ dicPath: dicPath }).build((err, tokenizer) => {
+        if (err) {
+          console.error("Kuromoji tokenizer error:", err);
+          reject(err); // エラーが発生したらPromiseをreject
+          return;
+        }
+        this.tokenizer = tokenizer;
+        console.log("Kuromoji tokenizer initialized.");
+        resolve(tokenizer); // 成功したらPromiseをresolve
+      });
+    });
+  }
+
+  // tokenizerのbuildが完了するまで待つ関数
+  async waitForTokenizerBuild(): Promise<void> {
+    if (!this.tokenizer) {
+      await this.tokenizerBuildPromise;
+    }
+  }
 
   private isJapanese(text: string): boolean {
     return /[一-龠ぁ-んァ-ン]/.test(text);
@@ -72,10 +104,30 @@ class NLPProcessor {
   }
 
   private getJapaneseTrigrams(query: string): string[] {
+    if (!this.tokenizer) {
+      console.error("Tokenizer not initialized");
+      return [];
+    }
+    // 1. 形態素解析
+    const tokens = this.tokenizer.tokenize(query);
 
-    let text = nlp.string.removeExtraSpaces(query);
-    text = nlp.string.stem(text);
-    return nlp.string.ngram(text, 3);
+    // 2. 名詞・動詞を抽出
+    const words = tokens
+      .filter(token => token.pos === "名詞" || token.pos === "動詞")
+      .map(token => token.basic_form || token.surface_form);
+
+    // 3. ストップワードを除去
+    const stopwords = new Set(["の", "は", "が", "を", "に", "で", "と", "も", "する", "なる"]);
+    const filteredWords = words.filter(word => !stopwords.has(word));
+
+    // 4. 重複削除
+    const uniqueWords = [...new Set(filteredWords)];
+
+    // 5. 3-gram の生成
+    return uniqueWords.length < 3
+      ? uniqueWords  // 2単語以下ならそのまま配列を返す
+      : uniqueWords.map((_, i, arr) => arr.slice(i, i + 3).join(" "))  // 3-gram 配列の生成
+        .filter(trigram => trigram.split(" ").length === 3)  // 3単語のものだけを抽出
   }
 
   private escapeFtsQueryString(query: string): string {
@@ -153,7 +205,9 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
       return [];
     }
 
-    const tokens = this.getCleanedTrigrams(args.query).join(" OR ");
+    await this.processor.waitForTokenizerBuild();
+
+	const tokens = this.getCleanedTrigrams(args.query).join(" OR ");
 
     return await this.ftsIndex.retrieve({
       n,
