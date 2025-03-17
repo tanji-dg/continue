@@ -522,7 +522,7 @@ class VsCodeIde implements IDE {
     const detected = Encoding.detect(sample);
 
     // 検出結果をiconv-liteが理解できる形式に変換
-    const detectedEncoding = this.normalizeEncodingName(detected);
+    const detectedEncoding = this.normalizeEncodingName(detected as string);
 
     // 検出の信頼度が低い場合はフォールバック
     if (!detectedEncoding) {
