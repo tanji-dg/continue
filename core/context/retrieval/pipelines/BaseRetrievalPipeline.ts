@@ -1,5 +1,7 @@
 // @ts-ignore
 import kuromoji from "kuromoji";
+import * as path from 'path';
+// @ts-ignore
 import nlp from "wink-nlp-utils";
 
 import { BranchAndDir, Chunk, ContinueConfig, IDE, ILLM } from "../../../";
@@ -33,24 +35,36 @@ export interface IRetrievalPipeline {
 }
 
 class NLPProcessor {
+
   private tokenizer: kuromoji.Tokenizer<string> | null = null;
 
-  constructor() {
-        // 正しい辞書パスを取得
-        const dicPath = vscode.Uri.joinPath(context.extensionUri, "media", "dict").fsPath;
+  private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<string>>;
 
-        // Kuromoji の辞書を読み込む
-        kuromoji.builder({ dicPath }).build((err, tokenizer) => {
-            if (err) {
-                console.error("Kuromoji tokenizer error:", err);
-                return;
-            }
-            console.log("Kuromoji tokenizer initialized.");
-        });
-    kuromoji.builder({ dicPath: "node_modules/kuromoji/dict" }).build((err, tokenizer) => {
-      if (err) throw err;
-      this.tokenizer = tokenizer;
+  constructor() {
+    // __dirname を使用してスクリプトファイルのディレクトリを取得
+    const dicPath: string = path.join(__dirname, 'kuromoji_dict');
+    console.log(dicPath);
+
+    // Promiseを作成してtokenizerのbuildをラップする
+    this.tokenizerBuildPromise = new Promise((resolve, reject) => {
+      kuromoji.builder({ dicPath: dicPath }).build((err, tokenizer) => {
+        if (err) {
+          console.error("Kuromoji tokenizer error:", err);
+          reject(err); // エラーが発生したらPromiseをreject
+          return;
+        }
+        this.tokenizer = tokenizer;
+        console.log("Kuromoji tokenizer initialized.");
+        resolve(tokenizer); // 成功したらPromiseをresolve
+      });
     });
+  }
+
+  // tokenizerのbuildが完了するまで待つ関数
+  async waitForTokenizerBuild(): Promise<void> {
+    if (!this.tokenizer) {
+      await this.tokenizerBuildPromise;
+    }
   }
 
   private isJapanese(text: string): boolean {
@@ -84,11 +98,11 @@ class NLPProcessor {
     const uniqueWords = [...new Set(filteredWords)];
 
     // 5. 3-gram の生成
-    const trigrams = uniqueWords.length < 3
-      ? []
-      : uniqueWords.map((_, i, arr) => arr.slice(i, i + 3).join(" ")).filter(trigram => trigram.split(" ").length === 3);
-
-    return trigrams;
+    return uniqueWords.length < 3
+      ? uniqueWords  // 2単語以下ならそのまま配列を返す
+      : uniqueWords.map((_, i, arr) => arr.slice(i, i + 3))  // 3-gram 配列の生成
+        .filter(trigram => trigram.length === 3)  // 3単語のものだけを抽出
+        .flat();  // フラット化して1次元の配列にする
   }
 
   private getEnglishTrigrams(query: string): string[] {
@@ -147,6 +161,8 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
     if (args.query.trim() === "") {
       return [];
     }
+
+    await this.processor.waitForTokenizerBuild();
 
     const tokensRaw = this.getCleanedTrigrams(args.query).join(" OR ");
     const tokens = this.escapeFtsQueryString(tokensRaw);
