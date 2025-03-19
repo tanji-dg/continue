@@ -1,5 +1,5 @@
 import { Chunk, ChunkWithoutID } from "../../index.js";
-import { countTokensAsync } from "../../llm/countTokens.js";
+import { countTokens, countTokensAsync } from "../../llm/countTokens.js";
 import { supportedLanguages } from "../../util/treeSitter.js";
 import { getUriFileExtension, getUriPathBasename } from "../../util/uri.js";
 
@@ -50,23 +50,21 @@ export async function* chunkDocument({
     maxChunkSize,
   )) {
     chunkPromises.push(
-      new Promise((resolve) => {
-        void (async () => {
-          if ((await countTokensAsync(chunkWithoutId.content)) > maxChunkSize) {
-            // console.debug(
-            //   `Chunk with more than ${maxChunkSize} tokens constructed: `,
-            //   filepath,
-            //   countTokens(chunkWithoutId.content),
-            // );
-            return resolve(undefined);
-          }
-          resolve({
-            ...chunkWithoutId,
-            digest,
-            index,
+      new Promise(async (resolve) => {
+        if ((await countTokensAsync(chunkWithoutId.content)) > maxChunkSize) {
+          console.debug(
+            `Chunk with more than ${maxChunkSize} tokens constructed: `,
             filepath,
-          });
-        })();
+            countTokens(chunkWithoutId.content),
+          );
+          return resolve(undefined);
+        }
+        resolve({
+          ...chunkWithoutId,
+          digest,
+          index,
+          filepath,
+        });
       }),
     );
     index++;
