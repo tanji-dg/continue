@@ -1,4 +1,6 @@
+import { SyntaxNode } from "web-tree-sitter";
 import { ChunkWithoutID } from "../..";
+import { getParserForFile } from "../../util/treeSitter";
 
 import { codeChunker } from "./code";
 
@@ -16,7 +18,7 @@ async function genToStrs(
   return (await genToArr(generator)).map((chunk) => chunk.content);
 }
 
-describe.skip("codeChunker", () => {
+describe("codeChunker", () => {
   test("should return empty array if file empty", async () => {
     const chunks = await genToStrs(codeChunker("test.ts", "", 100));
     expect(chunks).toEqual([]);
@@ -59,7 +61,7 @@ describe.skip("codeChunker", () => {
         .join("\n") +
       "\n\n";
 
-    console.log(file);
+    //console.log(file);
 
     const chunks = await genToStrs(codeChunker("test.py", file, 200));
     expect(chunks.length).toBeGreaterThan(1);
@@ -69,5 +71,69 @@ describe.skip("codeChunker", () => {
     // The extra spaces seem to be a bug with tree-sitter-python
     expect(chunks).toContain("def method1():\n        return \"Hello, 1!\"");
     expect(chunks).toContain("def method20():\n        return \"Hello, 20!\"");
+  });
+
+  test("example", async () => {
+    const file = "print('Hello, World!')";
+    const chunks = await genToStrs(codeChunker("test.py", file, 10));
+    expect(chunks).toEqual(["print('Hello, World!')"]);
+  });
+
+  test("empty file", async () => {
+    const extraLine = "// This is a comment";
+    const myClass = "void init();\n";
+    const myFunction = "void init() {\n    return;\n}";
+
+    const file =
+      Array(100).fill(extraLine).join("\n") +
+      "\n\n" +
+      myClass +
+      "\n\n" +
+      myFunction +
+      "\n\n" +
+      Array(100).fill(extraLine).join("\n");
+    //console.log(file);
+
+    const chunks = await genToStrs(codeChunker("test.c", file, 200));
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks).toContain(myClass);
+    expect(chunks).toContain(myFunction);
+  });
+
+  test("print tree of test.c file", async () => {
+    const extraLine = "// This is a comment";
+    const myDefine = "#define PI 3.14 // Define a constant value for PI\n";
+    const myInclude = "#include <stdio.h>\n";
+    const myClass = "void init();\n";
+    const myFunction = "void init() {\n    return;\n}";
+
+    const file =
+      Array(100).fill(extraLine).join("\n") +
+      "\n\n" +
+      myDefine +
+      "\n\n" +
+      myInclude +
+      "\n\n" +
+      myClass +
+      "\n\n" +
+      myFunction +
+      "\n\n" +
+      Array(100).fill(extraLine).join("\n");
+
+    const parser = await getParserForFile("test.c");
+    if (!parser) throw new Error("Parser not found");
+    const tree = parser.parse(file);
+
+    function printTree(node: SyntaxNode, indent = '') {
+      process.stdout.write(`${indent}${node.type}: `);
+      process.stdout.write(`${indent}${node.text}\n`);
+      if (node.namedChildren) {
+        node.namedChildren.forEach(child => printTree(child, `${indent}  `));
+      }
+    }
+
+    // タイトルを表示
+    console.log('Parsing Tree:');
+    printTree(tree.rootNode);
   });
 });
