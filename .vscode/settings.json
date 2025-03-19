@@ -53,4 +53,8 @@
   "conventionalCommits.promptFooter": false,
   "conventionalCommits.promptScopes": true,
   "conventionalCommits.scopes": ["reg"]
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
 }
