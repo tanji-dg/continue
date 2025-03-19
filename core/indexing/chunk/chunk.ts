@@ -1,5 +1,5 @@
 import { Chunk, ChunkWithoutID } from "../../index.js";
-import { countTokensAsync } from "../../llm/countTokens.js";
+import { countTokens, countTokensAsync } from "../../llm/countTokens.js";
 import { supportedLanguages } from "../../util/treeSitter.js";
 import { getUriFileExtension, getUriPathBasename } from "../../util/uri.js";
 
@@ -65,8 +65,16 @@ export async function* chunkDocument({
             digest,
             index: index++,
             filepath,
-          });
-        })();
+            countTokens(chunkWithoutId.content),
+          );
+          return resolve(undefined);
+        }
+        resolve({
+          ...chunkWithoutId,
+          digest,
+          index,
+          filepath,
+        });
       }),
     );
   }
