@@ -73,7 +73,7 @@
     },
     {
       "label": "vscode-extension:package",
-      "dependsOn": ["vscode-extension:esbuild"],
+      //"dependsOn": ["vscode-extension:esbuild"],
       "type": "npm",
       "script": "package",
       "path": "extensions/vscode",
