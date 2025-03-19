@@ -88,7 +88,7 @@ class NLPProcessor {
     // 2. 名詞・動詞を抽出
     const words = tokens
       .filter(token => token.pos === "名詞" || token.pos === "動詞")
-      .map(token => token.basic_form || token.surface_form);
+      .map(token => token.basic_form !== '*' ? token.basic_form : token.surface_form);
 
     // 3. ストップワードを除去
     const stopwords = new Set(["の", "は", "が", "を", "に", "で", "と", "も", "する", "なる"]);
