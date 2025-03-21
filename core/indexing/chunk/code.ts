@@ -189,19 +189,73 @@ async function maybeYieldChunk(
   return undefined;
 }
 
+type Comments = {
+  contents: string[];
+  startLine: number;
+  tokenCount: number;
+};
+
+async function addComment(comments: Comments, comment: string, maxChunkSize: number) :
+  Promise<ChunkWithoutID | undefined>
+{
+  const tokenCount = await countTokensAsync(comment);
+  let result = undefined;
+  if (comments.tokenCount + tokenCount > maxChunkSize - 5) {
+    // ここで区切る
+    result = getCommentChunk(comments, tokenCount);
+  } else {
+    comments.tokenCount += tokenCount;
+  }
+  comments.contents.push(comment);
+  return result;
+}
+
+async function getCommentChunk(comments: Comments, tokenCount: number) :
+  Promise<ChunkWithoutID | undefined>
+{
+  if (comments.contents.length > 0) {
+    const result = {
+      content: comments.contents.join("\n"),
+      startLine: comments.startLine,
+      endLine: comments.startLine + comments.contents.length - 1,
+    }
+    comments.startLine = result.endLine + 1;
+    comments.contents = [];
+    if (tokenCount === 0) {
+      comments.tokenCount += await countTokensAsync(result.content);
+    }
+    return result;
+  }
+  return undefined;
+}
+
 async function* getSmartCollapsedChunks(
   node: SyntaxNode,
   code: string,
   maxChunkSize: number,
   root = true,
+  comments: Comments,
 ): AsyncGenerator<ChunkWithoutID> {
   const chunk = await maybeYieldChunk(node, code, maxChunkSize, root);
   if (chunk) {
+    const result = await getCommentChunk(comments, 0);
+    if (result) {
+      yield result;
+    }
     yield chunk;
     return;
   }
-  // If a collapsed form is defined, use that
-  if (node.type in collapsedNodeConstructors) {
+  if (node.type === "comment") {
+    const result = await addComment(comments, node.text, maxChunkSize);
+    if (result) {
+      yield result;
+    }
+  } else if (node.type in collapsedNodeConstructors) {
+    const result = await getCommentChunk(comments, 0);
+    if (result) {
+      yield result;
+    }
+    // If a collapsed form is defined, use that
     yield {
       content: await collapsedNodeConstructors[node.type](
         node,
@@ -215,7 +269,7 @@ async function* getSmartCollapsedChunks(
 
   // Recurse (because even if collapsed version was shown, want to show the children in full somewhere)
   const generators = node.children.map((child) =>
-    getSmartCollapsedChunks(child, code, maxChunkSize, false),
+    getSmartCollapsedChunks(child, code, maxChunkSize, false, comments),
   );
   for (const generator of generators) {
     yield* generator;
@@ -238,5 +292,16 @@ export async function* codeChunker(
 
   const tree = parser.parse(contents);
 
-  yield* getSmartCollapsedChunks(tree.rootNode, contents, maxChunkSize);
+  const comments: Comments = {
+    contents: [],
+    startLine: 1,
+    tokenCount: 0,
+  };
+    
+  yield* getSmartCollapsedChunks(tree.rootNode, contents, maxChunkSize, true, comments);
+
+  const result = await getCommentChunk(comments, 0);
+  if (result) {
+    yield result;
+  }
 }
