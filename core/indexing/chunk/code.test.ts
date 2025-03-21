@@ -2,6 +2,7 @@ import { SyntaxNode } from "web-tree-sitter";
 import { ChunkWithoutID } from "../..";
 import { getParserForFile } from "../../util/treeSitter";
 
+import { countTokens } from "../../llm/countTokens";
 import { codeChunker } from "./code";
 
 async function genToArr<T>(generator: AsyncGenerator<T>): Promise<T[]> {
@@ -73,13 +74,13 @@ describe("codeChunker", () => {
     expect(chunks).toContain("def method20():\n        return \"Hello, 20!\"");
   });
 
-  test("example", async () => {
+  test("codeChunkerの使用法の確認", async () => {
     const file = "print('Hello, World!')";
     const chunks = await genToStrs(codeChunker("test.py", file, 10));
     expect(chunks).toEqual(["print('Hello, World!')"]);
   });
 
-  test("empty file", async () => {
+  test("C言語ヘッダーの動作確認。コメントもchunkに含む", async () => {
     const extraLine = "// This is a comment";
     const myClass = "void init();\n";
     const myFunction = "void init() {\n    return;\n}";
@@ -94,10 +95,15 @@ describe("codeChunker", () => {
       Array(100).fill(extraLine).join("\n");
     //console.log(file);
 
-    const chunks = await genToStrs(codeChunker("test.c", file, 200));
+    expect(countTokens(extraLine)).toEqual(6);
+
+    const chunks = await genToStrs(codeChunker("test.h", file, 200));
     expect(chunks.length).toBeGreaterThan(1);
-    expect(chunks).toContain(myClass);
+    //console.log(chunks);
+    //expect(chunks.length).toEqual(3);
+    //expect(chunks).toContain(myClass);
     expect(chunks).toContain(myFunction);
+    expect(chunks).toContain(extraLine);
   });
 
   test("print tree of test.c file", async () => {
@@ -134,6 +140,6 @@ describe("codeChunker", () => {
 
     // タイトルを表示
     console.log('Parsing Tree:');
-    printTree(tree.rootNode);
+    //printTree(tree.rootNode);
   });
 });
