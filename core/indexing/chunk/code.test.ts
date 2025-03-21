@@ -106,6 +106,31 @@ describe("codeChunker", () => {
     expect(chunks).toContain(extraLine);
   });
 
+  test("日本語コメントを含むヘッダーの動作確認", async () => {
+    const extraLine = "// 日本語のCommentのテスト";
+
+    const file =
+      Array(3).fill(extraLine).join("\n");
+
+    expect(countTokens(extraLine)).toEqual(12);
+    expect(countTokens(file)).toEqual(12 * 3);
+
+    const genChunks = await genToArr(codeChunker("test.h", file, 200));
+    expect(genChunks.length).toEqual(1);
+    expect(genChunks[0].startLine).toEqual(0);
+    expect(genChunks[0].endLine).toEqual(2);
+
+    let chunks = await genToStrs(codeChunker("test.h", file, 200));
+    expect(chunks.length).toEqual(1);
+
+    chunks = await genToStrs(codeChunker("test.h", file, 12 * 3 + 1));
+    expect(chunks.length).toEqual(1);
+
+    chunks = await genToStrs(codeChunker("test.h", file, 12 * 3));
+    expect(chunks.length).toEqual(2);
+  });
+
+
   test("print tree of test.c file", async () => {
     const extraLine = "// This is a comment";
     const myDefine = "#define PI 3.14 // Define a constant value for PI\n";
@@ -114,7 +139,7 @@ describe("codeChunker", () => {
     const myFunction = "void init() {\n    return;\n}";
 
     const file =
-      Array(100).fill(extraLine).join("\n") +
+      Array(2).fill(extraLine).join("\n") +
       "\n\n" +
       myDefine +
       "\n\n" +
@@ -124,7 +149,7 @@ describe("codeChunker", () => {
       "\n\n" +
       myFunction +
       "\n\n" +
-      Array(100).fill(extraLine).join("\n");
+      Array(2).fill(extraLine).join("\n");
 
     const parser = await getParserForFile("test.c");
     if (!parser) throw new Error("Parser not found");
@@ -141,5 +166,14 @@ describe("codeChunker", () => {
     // タイトルを表示
     console.log('Parsing Tree:');
     //printTree(tree.rootNode);
+  
+    let chunks = await genToStrs(codeChunker("test.h", file, 20));
+    expect(chunks.length).toBeGreaterThan(1);
+    //expect(chunks.length).toEqual(4);
+    //expect(chunks).toContain(myClass);
+    expect(chunks[0]).toContain(extraLine);
+    expect(chunks[1]).toContain(myFunction);
+    expect(chunks[2]).toContain(extraLine);
+    expect(chunks[3]).toContain(extraLine);
   });
 });
