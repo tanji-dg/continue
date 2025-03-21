@@ -34,11 +34,27 @@ export interface IRetrievalPipeline {
   run(args: RetrievalPipelineRunArguments): Promise<Chunk[]>;
 }
 
+// kuromoji の Tokenizer が返すオブジェクトの型定義
+interface IpadicFeatures {
+  word_id: number;
+  word_type: string;
+  surface_form: string;
+  pos: string;
+  pos_detail_1: string;
+  pos_detail_2: string;
+  pos_detail_3: string;
+  conjugated_type: string;
+  conjugated_form: string;
+  basic_form: string;
+  reading: string;
+  pronunciation: string;
+}
+
 class NLPProcessor {
 
-  private tokenizer: kuromoji.Tokenizer<string> | null = null;
+  private tokenizer: kuromoji.Tokenizer<IpadicFeatures> | null = null; // 型を修正
 
-  private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<string>>;
+  private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<IpadicFeatures>>; // 型を修正
 
   constructor() {
     // __dirname を使用してスクリプトファイルのディレクトリを取得
@@ -46,16 +62,16 @@ class NLPProcessor {
     console.log(dicPath);
 
     // Promiseを作成してtokenizerのbuildをラップする
-    this.tokenizerBuildPromise = new Promise((resolve, reject) => {
+    this.tokenizerBuildPromise = new Promise<kuromoji.Tokenizer<IpadicFeatures>>((resolve, reject) => {  // 型を修正
       kuromoji.builder({ dicPath: dicPath }).build((err, tokenizer) => {
         if (err) {
           console.error("Kuromoji tokenizer error:", err);
           reject(err); // エラーが発生したらPromiseをreject
           return;
         }
-        this.tokenizer = tokenizer;
+        this.tokenizer = tokenizer as kuromoji.Tokenizer<IpadicFeatures>; // 型アサーションを追加
         console.log("Kuromoji tokenizer initialized.");
-        resolve(tokenizer); // 成功したらPromiseをresolve
+        resolve(tokenizer as kuromoji.Tokenizer<IpadicFeatures>); // 型アサーションを追加
       });
     });
   }
