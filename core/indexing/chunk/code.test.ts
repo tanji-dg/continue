@@ -169,14 +169,6 @@ describe("codeChunker", () => {
     if (!parser) throw new Error("Parser not found");
     const tree = parser.parse(file);
 
-    function printTree(node: SyntaxNode, indent = '') {
-      process.stdout.write(`${indent}${node.type}: `);
-      process.stdout.write(`${indent}${node.text}\n`);
-      if (node.namedChildren) {
-        node.namedChildren.forEach(child => printTree(child, `${indent}  `));
-      }
-    }
-
     // タイトルを表示
     console.log('Parsing Tree:');
     printTree(tree.rootNode);
