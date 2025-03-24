@@ -202,7 +202,8 @@ async function addComment(comments: Comments, comment: string, maxChunkSize: num
   let result = undefined;
   if (comments.tokenCount + tokenCount > maxChunkSize - 5) {
     // ここで区切る
-    result = getCommentChunk(comments, tokenCount);
+    result = getCommentChunk(comments);
+    comments.tokenCount = tokenCount;
   } else {
     comments.tokenCount += tokenCount;
   }
@@ -210,7 +211,7 @@ async function addComment(comments: Comments, comment: string, maxChunkSize: num
   return result;
 }
 
-async function getCommentChunk(comments: Comments, tokenCount: number) :
+async function getCommentChunk(comments: Comments) :
   Promise<ChunkWithoutID | undefined>
 {
   if (comments.contents.length > 0) {
@@ -221,9 +222,6 @@ async function getCommentChunk(comments: Comments, tokenCount: number) :
     }
     comments.startLine = result.endLine + 1;
     comments.contents = [];
-    if (tokenCount === 0) {
-      comments.tokenCount += await countTokensAsync(result.content);
-    }
     return result;
   }
   return undefined;
@@ -238,7 +236,7 @@ async function* getSmartCollapsedChunks(
 ): AsyncGenerator<ChunkWithoutID> {
   const chunk = await maybeYieldChunk(node, code, maxChunkSize, root);
   if (chunk) {
-    const result = await getCommentChunk(comments, 0);
+    const result = await getCommentChunk(comments);
     if (result) {
       yield result;
     }
@@ -251,7 +249,7 @@ async function* getSmartCollapsedChunks(
       yield result;
     }
   } else if (node.type in collapsedNodeConstructors) {
-    const result = await getCommentChunk(comments, 0);
+    const result = await getCommentChunk(comments);
     if (result) {
       yield result;
     }
@@ -300,7 +298,7 @@ export async function* codeChunker(
     
   yield* getSmartCollapsedChunks(tree.rootNode, contents, maxChunkSize, true, comments);
 
-  const result = await getCommentChunk(comments, 0);
+  const result = await getCommentChunk(comments);
   if (result) {
     yield result;
   }
