@@ -15,7 +15,9 @@
         //"${workspaceFolder}/manual-testing-sandbox",
         //"${workspaceFolder}/manual-testing-sandbox/test.js",
         //"d:/git/sysu-gitlab/pachi/ps_fw_base",
-        "D:/git/sysu-gitlab/pachi/ps_fw_base/AG6RProgram/Drv/source/Driver",
+        //"D:/git/sysu-gitlab/pachi/ps_fw_base/AG6RProgram/Drv/source/Driver/DrvLamp.h",
+        //"D:/git/sysu-gitlab/pachi/ps_fw_base/AG6RProgram/Drv/source/Driver",
+        "${workspaceFolder}/drv",
         "--extensionDevelopmentPath=${workspaceFolder}/extensions/vscode"
       ],
       "pauseForSourceMap": false,
