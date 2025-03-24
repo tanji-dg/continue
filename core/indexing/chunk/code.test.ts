@@ -5,6 +5,9 @@ import { getParserForFile } from "../../util/treeSitter";
 import { countTokens } from "../../llm/countTokens";
 import { codeChunker } from "./code";
 
+import fs from "node:fs";
+import path from "node:path";
+
 async function genToArr<T>(generator: AsyncGenerator<T>): Promise<T[]> {
   const result: T[] = [];
   for await (const item of generator) {
@@ -103,7 +106,7 @@ describe("codeChunker", () => {
     //expect(chunks.length).toEqual(3);
     //expect(chunks).toContain(myClass);
     expect(chunks).toContain(myFunction);
-    expect(chunks).toContain(extraLine);
+    expect(chunks[0]).toContain(extraLine);
   });
 
   test("日本語コメントを含むヘッダーの動作確認", async () => {
@@ -130,8 +133,18 @@ describe("codeChunker", () => {
     expect(chunks.length).toEqual(2);
   });
 
+  function printTree(node: SyntaxNode, indent = '') {
+    process.stdout.write(`${indent}${node.type}: `);
+    process.stdout.write(`${indent}${node.text}\n`);
+    if (node.namedChildren) {
+      node.namedChildren.forEach(child => printTree(child, `${indent}  `));
+    }
+  }
 
   test("print tree of test.c file", async () => {
+    const commentI = (i: number) =>
+      `// ${i} This is a comment`;
+
     const extraLine = "// This is a comment";
     const myDefine = "#define PI 3.14 // Define a constant value for PI\n";
     const myInclude = "#include <stdio.h>\n";
@@ -139,7 +152,7 @@ describe("codeChunker", () => {
     const myFunction = "void init() {\n    return;\n}";
 
     const file =
-      Array(2).fill(extraLine).join("\n") +
+      Array(2).fill(0).map((_, i) => commentI(i + 1)).join("\n") +
       "\n\n" +
       myDefine +
       "\n\n" +
@@ -149,31 +162,55 @@ describe("codeChunker", () => {
       "\n\n" +
       myFunction +
       "\n\n" +
-      Array(2).fill(extraLine).join("\n");
+      Array(2).fill(0).map((_, i) => commentI(2 + i + 1)).join("\n");
+    console.log(file);
 
-    const parser = await getParserForFile("test.c");
+    const parser = await getParserForFile("test.h");
     if (!parser) throw new Error("Parser not found");
     const tree = parser.parse(file);
 
-    function printTree(node: SyntaxNode, indent = '') {
-      process.stdout.write(`${indent}${node.type}: `);
-      process.stdout.write(`${indent}${node.text}\n`);
-      if (node.namedChildren) {
-        node.namedChildren.forEach(child => printTree(child, `${indent}  `));
-      }
-    }
-
     // タイトルを表示
     console.log('Parsing Tree:');
-    //printTree(tree.rootNode);
-  
+    printTree(tree.rootNode);
+
     let chunks = await genToStrs(codeChunker("test.h", file, 20));
     expect(chunks.length).toBeGreaterThan(1);
     //expect(chunks.length).toEqual(4);
     //expect(chunks).toContain(myClass);
-    expect(chunks[0]).toContain(extraLine);
-    expect(chunks[1]).toContain(myFunction);
-    expect(chunks[2]).toContain(extraLine);
-    expect(chunks[3]).toContain(extraLine);
+    console.log(chunks);
+    expect(chunks[0]).toContain(commentI(1));
+    expect(chunks[1]).toContain(commentI(2));
+    expect(chunks[2]).toContain(myFunction);
+    expect(chunks[3]).toContain(commentI(3));
+    expect(chunks[4]).toContain(commentI(4));
   });
+
+  test("DrvLamp.c chunking", async () => {
+    const testFilePath = path.join(__dirname, "../drv", "DrvLamp.c");
+    const testFileContents = fs.readFileSync(testFilePath, "binary");
+
+    const chunks = await genToStrs(codeChunker("DrvLamp.c", testFileContents, 200));
+    expect(chunks.length).toBeGreaterThan(1);
+
+    const parser = await getParserForFile("test.h");
+    if (!parser) throw new Error("Parser not found");
+    const tree = parser.parse(testFileContents);
+
+    //console.log('Parsing Tree:');
+    //printTree(tree.rootNode);
+
+    //for (const c of chunks) {
+    //  console.log("chunk\n");
+    //  console.log(c);
+   // }
+
+    //expect(chunks.length).toEqual(4);
+    //expect(chunks).toContain(myClass);
+    expect(chunks[0].length).toBeGreaterThan(1);
+    expect(chunks[1].length).toBeGreaterThan(1);
+    //expect(chunks[1]).toContain(myFunction);
+    //expect(chunks[2]).toContain(extraLine);
+    //expect(chunks[3]).toContain(extraLine);
+  });
+
 });
