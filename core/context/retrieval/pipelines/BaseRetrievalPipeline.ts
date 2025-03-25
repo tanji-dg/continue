@@ -112,13 +112,10 @@ class NLPProcessor {
 
     // 4. 重複削除
     const uniqueWords = [...new Set(filteredWords)];
+    const cleanedTokens = [...uniqueWords].join(" ");
 
     // 5. 3-gram の生成
-    return uniqueWords.length < 3
-      ? uniqueWords  // 2単語以下ならそのまま配列を返す
-      : uniqueWords.map((_, i, arr) => arr.slice(i, i + 3))  // 3-gram 配列の生成
-        .filter(trigram => trigram.length === 3)  // 3単語のものだけを抽出
-        .flat();  // フラット化して1次元の配列にする
+    return nlp.string.ngram(cleanedTokens, 3);
   }
 
   private getEnglishTrigrams(query: string): string[] {
@@ -185,7 +182,7 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
 
     return await this.ftsIndex.retrieve({
       n,
-      text: tokens,
+      text: tokensRaw,
       tags: args.tags,
       directory: args.filterDirectory,
     });
