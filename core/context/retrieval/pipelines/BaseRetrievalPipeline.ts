@@ -137,12 +137,14 @@ class NLPProcessor {
 
     // 4. 重複削除
     const uniqueWords = [...new Set(filteredWords)];
+    const cleanedTokens = [...uniqueWords].join(" ");
 
     // 5. 3-gram の生成
-    return uniqueWords.length < 3
-      ? uniqueWords  // 2単語以下ならそのまま配列を返す
-      : uniqueWords.map((_, i, arr) => arr.slice(i, i + 3).join(" "))  // 3-gram 配列の生成
-        .filter(trigram => trigram.split(" ").length === 3)  // 3単語のものだけを抽出
+<<<<<<< HEAD
+    return nlp.string.ngram(cleanedTokens, 3);
+=======
+    return nlp.string.ngram(cleanedTokens, 3);
+>>>>>>> 97f42d6fd (全文検索が機能していなかったのを修正。)
   }
 
   private getEnglishTrigrams(query: string): string[] {
