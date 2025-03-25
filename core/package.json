@@ -6,6 +6,7 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:code-watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch code.test.ts",
     "test:code": "cross-env NODE_OPTIONS=--experimental-vm-modules jest code.test.ts",
+    "test:fts": "cross-env NODE_OPTIONS=--experimental-vm-modules CONTINUE_GLOBAL_DIR=c:/users/tanji/.continue jest --watch FullTextSearchCodebaseIndex.test.ts",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage && open ./coverage/lcov-report/index.html",
     "tsc:check": "tsc -p ./ --noEmit",
     "build:npm": "tsc -p ./tsconfig.npm.json",
