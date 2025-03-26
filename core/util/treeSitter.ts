@@ -52,6 +52,7 @@ export const supportedLanguages: { [key: string]: LanguageName } = {
   cs: LanguageName.C_SHARP,
   c: LanguageName.C,
   h: LanguageName.C,
+  idt: LanguageName.C,
   css: LanguageName.CSS,
   php: LanguageName.PHP,
   phtml: LanguageName.PHP,
