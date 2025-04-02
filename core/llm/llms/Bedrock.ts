@@ -387,6 +387,7 @@ class Bedrock extends BaseLLM {
     let currentRole: "user" | "assistant" = "user";
     let currentBlocks: ContentBlock[] = [];
 
+<<<<<<< HEAD
     const converted: Message[] = [];
     const pushCurrentMessage = () => {
       if (currentBlocks.length === 0 && converted.length > 1) {
