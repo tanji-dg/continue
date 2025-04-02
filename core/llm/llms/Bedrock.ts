@@ -415,6 +415,11 @@ class Bedrock extends BaseLLM {
       };
     }
 
+    if (this.title === "Bedrock: DeepSeek-R1" &&
+      message.role === "thinking") {
+      return null;
+    }
+
     if (message.role === "thinking") {
       if (message.redactedThinking) {
         const content: ContentBlock.ReasoningContentMember = {
