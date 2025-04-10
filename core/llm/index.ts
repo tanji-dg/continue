@@ -28,7 +28,7 @@ import {
   TemplateType,
 } from "../index.js";
 import mergeJson from "../util/merge.js";
-import { renderChatMessage } from "../util/messageContent.js";
+import { renderChatMessage, stripImages } from "../util/messageContent.js";
 import { isOllamaInstalled } from "../util/ollamaHelper.js";
 import { Telemetry } from "../util/posthog.js";
 import { withExponentialBackoff } from "../util/withExponentialBackoff.js";
@@ -616,6 +616,14 @@ export abstract class BaseLLM implements ILLM {
     };
   }
 
+  private async *_streamRawCompleteChunk(
+    prompt: string,
+    signal: AbortSignal,
+    options: CompletionOptions,
+  ): AsyncGenerator<ChatMessage> {
+    throw new Error("Not implemented");
+  }
+
   async *streamComplete(
     _prompt: string,
     signal: AbortSignal,
@@ -651,6 +659,7 @@ export abstract class BaseLLM implements ILLM {
     }
 
     let completion = "";
+    let thinking = undefined;
     try {
       if (this.shouldUseOpenAIAdapter("streamComplete") && this.openaiAdapter) {
         if (completionOptions.stream === false) {
@@ -679,6 +688,28 @@ export abstract class BaseLLM implements ILLM {
             yield content;
           }
         }
+      } else if (BaseLLM.isBedrockDeepSeekR1Model(this.title)) {
+        for await (const chunk of this._streamRawComplete(
+          prompt,
+          signal,
+          completionOptions,
+        )) {
+          if (chunk.role === 'assistant') {
+            const content = stripImages(chunk.content);
+            completion += content;
+            yield content;
+          } else if (chunk.role === 'thinking') {
+            const content = stripImages(chunk.content);
+            if (!thinking) {
+              thinking = "";
+            }
+            thinking += content;
+          }
+          interaction?.logItem({
+            kind: "message",
+            message: chunk,
+          });
+        }
       } else {
         for await (const chunk of this._streamComplete(
           prompt,
@@ -697,7 +728,7 @@ export abstract class BaseLLM implements ILLM {
         completionOptions.model,
         prompt,
         completion,
-        undefined,
+        thinking,
         interaction,
       );
     } catch (e) {
@@ -729,6 +760,10 @@ export abstract class BaseLLM implements ILLM {
       completion,
       completionOptions,
     };
+  }
+
+  public static isBedrockDeepSeekR1Model(title: string | undefined): boolean {
+    return title === 'Bedrock: DeepSeek-R1';
   }
 
   async complete(
@@ -947,16 +982,17 @@ export abstract class BaseLLM implements ILLM {
             completionOptions,
           )) {
             if (chunk.role === "assistant") {
-              completion += chunk.content;
+              const content = stripImages(chunk.content);
+              completion += content;
+              yield chunk;
             } else if (chunk.role === "thinking") {
-              thinking += chunk.content;
+              const content = stripImages(chunk.content);
+              thinking += content;
             }
-
             interaction?.logItem({
               kind: "message",
               message: chunk,
             });
-            yield chunk;
           }
         }
       }
@@ -1070,6 +1106,14 @@ export abstract class BaseLLM implements ILLM {
     signal: AbortSignal,
     options: CompletionOptions,
   ): AsyncGenerator<string> {
+    throw new Error("Not implemented");
+  }
+
+  protected async *_streamRawComplete(
+    prompt: string,
+    signal: AbortSignal,
+    options: CompletionOptions,
+  ): AsyncGenerator<ChatMessage> {
     throw new Error("Not implemented");
   }
 
