@@ -27,7 +27,7 @@ function isEnglishFirstLine(line: string) {
   line = line.trim().toLowerCase();
 
   if (
-    line.endsWith(":") &&
+    (line.endsWith(":") || line.endsWith("：")) &&
     !CODE_KEYWORDS_ENDING_IN_SEMICOLON.some((keyword) =>
       line.startsWith(keyword),
     )
