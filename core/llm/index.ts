@@ -790,12 +790,17 @@ export abstract class BaseLLM implements ILLM {
     };
   }
 
+<<<<<<< HEAD
   public static isDeepSeekModel(model: string): boolean {
     return model.includes('deepseek');
   }
 
   public static isSupportPromptCacheModel(model: string): boolean {
     return model.includes("claude-3-7");
+=======
+  public static isBedrockDeepSeekR1Model(title: string | undefined): boolean {
+    return title === 'Bedrock: DeepSeek-R1';
+>>>>>>> dfdbda617 (Applyが正常に動作するように修正。)
   }
 
   async complete(
