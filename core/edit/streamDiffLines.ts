@@ -183,13 +183,7 @@ export async function* streamDiffLines({
     diffLines = addIndentation(diffLines, indentation);
   }
 
-  let seenGreen = false;
   for await (const diffLine of diffLines) {
     yield diffLine;
-    if (diffLine.type === "new") {
-      seenGreen = true;
-    } else if (onlyOneInsertion && seenGreen && diffLine.type === "same") {
-      break;
-    }
   }
 }
