@@ -72,6 +72,9 @@ class Bedrock extends BaseLLM {
       region: options.region,
       headers: {},
     };
+    if (!BaseLLM.isBedrockDeepSeekR1Model(this.title)) {
+      this.cacheBehavior = { cacheSystemMessage: true, cacheConversation: true };
+    }
   }
 
   protected async *_streamComplete(
@@ -82,6 +85,17 @@ class Bedrock extends BaseLLM {
     const messages = [{ role: "user" as const, content: prompt }];
     for await (const update of this._streamChat(messages, signal, options)) {
       yield renderChatMessage(update);
+    }
+  }
+
+  protected async *_streamRawComplete(
+    prompt: string,
+    signal: AbortSignal,
+    options: CompletionOptions,
+  ): AsyncGenerator<ChatMessage> {
+    const messages = [{ role: "user" as const, content: prompt }];
+    for await (const update of this._streamChat(messages, signal, options)) {
+      yield update;
     }
   }
 
@@ -363,7 +377,6 @@ class Bedrock extends BaseLLM {
     let currentRole: "user" | "assistant" = "user";
     let currentBlocks: ContentBlock[] = [];
 
-<<<<<<< HEAD
     const converted: Message[] = [];
     const pushCurrentMessage = () => {
       if (currentBlocks.length === 0 && converted.length > 1) {
