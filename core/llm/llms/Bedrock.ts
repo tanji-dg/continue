@@ -5,7 +5,6 @@ import {
   ConverseStreamCommandOutput,
   InvokeModelCommand,
   Message,
-  ToolConfiguration,
 } from "@aws-sdk/client-bedrock-runtime";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 
@@ -348,7 +347,8 @@ class Bedrock extends BaseLLM {
 
     return {
       modelId: options.model,
-      system: systemMessage
+      messages: convertedMessages,
+      system: this.systemMessage
         ? shouldCacheSystemMessage
           ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
           : [{ text: systemMessage }]
