@@ -76,7 +76,7 @@ class Bedrock extends BaseLLM {
       region: options.region,
       headers: {},
     };
-    if (!BaseLLM.isSupportPromptCacheModel(this.model)) {
+    if (BaseLLM.isSupportPromptCacheModel(this.model)) {
       this.cacheBehavior = { cacheSystemMessage: true, cacheConversation: true };
     }
   }
