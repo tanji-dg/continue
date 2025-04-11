@@ -5,7 +5,6 @@ import {
   ConverseStreamCommandOutput,
   InvokeModelCommand,
   Message,
-  ToolConfiguration,
 } from "@aws-sdk/client-bedrock-runtime";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 
@@ -323,38 +322,29 @@ class Bedrock extends BaseLLM {
     }
 
     const supportsTools =
-      (this.capabilities?.tools ||
-        PROVIDER_TOOL_SUPPORT.bedrock?.(options.model)) ??
-      false;
-
-    let toolConfig =
-      supportsTools && options.tools
-        ? ({
-            tools: options.tools.map((tool) => ({
-              toolSpec: {
-                name: tool.function.name,
-                description: tool.function.description,
-                inputSchema: {
-                  json: tool.function.parameters,
-                },
-              },
-            })),
-          } as ToolConfiguration)
-        : undefined;
-
-    if (toolConfig?.tools && shouldCacheToolsConfig) {
-      toolConfig.tools.push({ cachePoint: { type: "default" } });
-    }
-
+      PROVIDER_TOOL_SUPPORT.bedrock?.(options.model || "") ?? false;
     return {
       modelId: options.model,
-      system: systemMessage
+      messages: convertedMessages,
+      system: this.systemMessage
         ? shouldCacheSystemMessage
           ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
           : [{ text: systemMessage }]
         : undefined,
-      toolConfig: toolConfig,
-      messages: convertedMessages,
+      toolConfig:
+        supportsTools && options.tools
+          ? {
+              tools: options.tools.map((tool) => ({
+                toolSpec: {
+                  name: tool.function.name,
+                  description: tool.function.description,
+                  inputSchema: {
+                    json: tool.function.parameters,
+                  },
+                },
+              })),
+            }
+          : undefined,
       inferenceConfig: {
         maxTokens: options.maxTokens,
         temperature: options.temperature,
