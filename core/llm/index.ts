@@ -786,7 +786,7 @@ export abstract class BaseLLM implements ILLM {
   }
 
   public static isSupportPromptCacheModel(model: string): boolean {
-    return model.includes("claude");
+    return model.includes("claude-3-7");
   }
 
   public static isBedrockDeepSeekR1Model(title: string | undefined): boolean {
