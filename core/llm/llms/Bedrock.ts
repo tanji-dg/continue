@@ -76,7 +76,7 @@ class Bedrock extends BaseLLM {
       region: options.region,
       headers: {},
     };
-    if (!BaseLLM.isBedrockDeepSeekR1Model(this.title)) {
+    if (BaseLLM.isSupportPromptCacheModel(this.model)) {
       this.cacheBehavior = { cacheSystemMessage: true, cacheConversation: true };
     }
   }
@@ -411,7 +411,7 @@ class Bedrock extends BaseLLM {
       };
     }
 
-    if (BaseLLM.isBedrockDeepSeekR1Model(this.title) &&
+    if (BaseLLM.isDeepSeekModel(this.model) &&
       message.role === "thinking") {
       return null;
     }
