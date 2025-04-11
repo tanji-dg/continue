@@ -7,7 +7,6 @@ import {
   ImageFormat,
   InvokeModelCommand,
   Message,
-  ToolConfiguration,
 } from "@aws-sdk/client-bedrock-runtime";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 
@@ -356,13 +355,13 @@ class Bedrock extends BaseLLM {
 
     return {
       modelId: options.model,
+      messages: convertedMessages,
       system: systemMessage
         ? shouldCacheSystemMessage
           ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
           : [{ text: systemMessage }]
         : undefined,
       toolConfig: toolConfig,
-      messages: convertedMessages,
       inferenceConfig: {
         maxTokens: options.maxTokens,
         temperature: options.temperature,
