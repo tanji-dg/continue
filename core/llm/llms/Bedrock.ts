@@ -14,7 +14,7 @@ import {
   CompletionOptions,
   LLMOptions,
 } from "../../index.js";
-import { renderChatMessage, stripImages } from "../../util/messageContent.js";
+import { renderChatMessage } from "../../util/messageContent.js";
 import { BaseLLM } from "../index.js";
 import { PROVIDER_TOOL_SUPPORT } from "../toolSupport.js";
 import { getSecureID } from "../utils/getSecureID.js";
@@ -299,13 +299,10 @@ class Bedrock extends BaseLLM {
     messages: ChatMessage[],
     options: CompletionOptions,
   ): any {
-    const systemMessage = stripImages(
-      messages.find((m) => m.role === "system")?.content ?? "",
-    );
     const convertedMessages = this._convertMessages(messages);
 
     const shouldCacheSystemMessage =
-      !!systemMessage && this.cacheBehavior?.cacheSystemMessage;
+      !!this.systemMessage && this.cacheBehavior?.cacheSystemMessage;
     const enablePromptCaching =
       shouldCacheSystemMessage || this.cacheBehavior?.cacheConversation;
 
@@ -322,10 +319,10 @@ class Bedrock extends BaseLLM {
     return {
       modelId: options.model,
       messages: convertedMessages,
-      system: systemMessage
+      system: this.systemMessage
         ? shouldCacheSystemMessage
-          ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
-          : [{ text: systemMessage }]
+          ? [{ text: this.systemMessage }, { cachePoint: { type: "default" } }]
+          : [{ text: this.systemMessage }]
         : undefined,
       toolConfig:
         supportsTools && options.tools
