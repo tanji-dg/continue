@@ -741,7 +741,7 @@ export abstract class BaseLLM implements ILLM {
             yield content;
           }
         }
-      } else if (BaseLLM.isBedrockDeepSeekR1Model(this.title)) {
+      } else if (BaseLLM.isDeepSeekModel(this.model)) {
         for await (const chunk of this._streamRawComplete(
           prompt,
           signal,
@@ -815,8 +815,12 @@ export abstract class BaseLLM implements ILLM {
     };
   }
 
-  public static isBedrockDeepSeekR1Model(title: string | undefined): boolean {
-    return title === 'Bedrock: DeepSeek-R1';
+  public static isDeepSeekModel(model: string): boolean {
+    return model.includes('deepseek');
+  }
+
+  public static isSupportPromptCacheModel(model: string): boolean {
+    return model.includes("claude");
   }
 
   async complete(
