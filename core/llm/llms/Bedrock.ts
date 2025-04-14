@@ -530,6 +530,21 @@ class Bedrock extends BaseLLM {
       })
       .filter(Boolean);
 
+    if (BaseLLM.isDeepSeekModel(this.model)) {
+      const filterdsystemmessages = messages.filter(
+        (m) => m.role === "system" && !!m.content,
+      );
+
+      if (filterdsystemmessages.length > 0) {
+        converted.unshift(
+          {
+            role: "user",
+            content: [
+              { text: filterdsystemmessages[0].content }
+            ]
+          } as Message);
+      }
+    }
     return converted;
   }
 
