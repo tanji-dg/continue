@@ -14,10 +14,10 @@ import {
   CompletionOptions,
   LLMOptions,
 } from "../../index.js";
+import { getSecureID } from "../utils/getSecureID.js";
 import { renderChatMessage } from "../../util/messageContent.js";
 import { BaseLLM } from "../index.js";
 import { PROVIDER_TOOL_SUPPORT } from "../toolSupport.js";
-import { getSecureID } from "../utils/getSecureID.js";
 
 interface ModelConfig {
   formatPayload: (text: string) => any;
