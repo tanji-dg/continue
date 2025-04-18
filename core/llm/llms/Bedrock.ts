@@ -14,10 +14,10 @@ import {
   CompletionOptions,
   LLMOptions,
 } from "../../index.js";
-import { getSecureID } from "../utils/getSecureID.js";
 import { renderChatMessage, stripImages } from "../../util/messageContent.js";
 import { BaseLLM } from "../index.js";
 import { PROVIDER_TOOL_SUPPORT } from "../toolSupport.js";
+import { getSecureID } from "../utils/getSecureID.js";
 
 interface ModelConfig {
   formatPayload: (text: string) => any;
@@ -323,7 +323,7 @@ class Bedrock extends BaseLLM {
     return {
       modelId: options.model,
       messages: convertedMessages,
-      system: this.systemMessage
+      system: systemMessage
         ? shouldCacheSystemMessage
           ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
           : [{ text: systemMessage }]
