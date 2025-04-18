@@ -327,7 +327,7 @@ class Bedrock extends BaseLLM {
     return {
       modelId: options.model,
       messages: convertedMessages,
-      system: this.systemMessage
+      system: systemMessage
         ? shouldCacheSystemMessage
           ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
           : [{ text: systemMessage }]
