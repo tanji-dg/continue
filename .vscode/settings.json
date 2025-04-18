@@ -56,4 +56,5 @@
   "[typescript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
+  "cmake.ignoreCMakeListsMissing": true,
 }
