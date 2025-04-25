@@ -4,7 +4,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
 cd extensions/vscode/
-nvm use v20.11.0 
+nvm use v20.19.0 
 npm run esbuild
 npm run package-all
 mv -v build/*.vsix ~/d-out-tanji
