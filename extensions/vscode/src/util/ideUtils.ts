@@ -609,12 +609,20 @@ export class VsCodeIdeUtils {
       if (repos) {
         for (const repo of repos) {
 
-          const staged = await repo.diff(true);
+          try {
+            const staged = await repo.diff(true);
+            diffs.push(staged);
+          } catch (e) {
+            console.error(e);
+          }
 
-          diffs.push(staged);
           if (includeUnstaged) {
-            const unstaged = await repo.diff(false);
-            diffs.push(unstaged);
+            try {
+              const unstaged = await repo.diff(false);
+              diffs.push(unstaged);
+            } catch (e) {
+              console.error(e);
+            }
           }
         }
       }
