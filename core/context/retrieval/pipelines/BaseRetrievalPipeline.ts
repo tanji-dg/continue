@@ -1,6 +1,3 @@
-// @ts-ignore
-import kuromoji from "kuromoji";
-import * as path from 'path';
 import nlp from "wink-nlp-utils";
 
 import {
@@ -59,54 +56,7 @@ export interface IRetrievalPipeline {
   run(args: RetrievalPipelineRunArguments): Promise<Chunk[]>;
 }
 
-// kuromoji の Tokenizer が返すオブジェクトの型定義
-interface IpadicFeatures {
-  word_id: number;
-  word_type: string;
-  surface_form: string;
-  pos: string;
-  pos_detail_1: string;
-  pos_detail_2: string;
-  pos_detail_3: string;
-  conjugated_type: string;
-  conjugated_form: string;
-  basic_form: string;
-  reading: string;
-  pronunciation: string;
-}
-
 class NLPProcessor {
-
-  private tokenizer: kuromoji.Tokenizer<IpadicFeatures> | null = null; // 型を修正
-
-  private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<IpadicFeatures>>; // 型を修正
-
-  constructor() {
-    // __dirname を使用してスクリプトファイルのディレクトリを取得
-    const dicPath: string = path.join(__dirname, 'kuromoji_dict');
-    console.log(dicPath);
-
-    // Promiseを作成してtokenizerのbuildをラップする
-    this.tokenizerBuildPromise = new Promise<kuromoji.Tokenizer<IpadicFeatures>>((resolve, reject) => {  // 型を修正
-      kuromoji.builder({ dicPath: dicPath }).build((err, tokenizer) => {
-        if (err) {
-          console.error("Kuromoji tokenizer error:", err);
-          reject(err); // エラーが発生したらPromiseをreject
-          return;
-        }
-        this.tokenizer = tokenizer as kuromoji.Tokenizer<IpadicFeatures>; // 型アサーションを追加
-        console.log("Kuromoji tokenizer initialized.");
-        resolve(tokenizer as kuromoji.Tokenizer<IpadicFeatures>); // 型アサーションを追加
-      });
-    });
-  }
-
-  // tokenizerのbuildが完了するまで待つ関数
-  async waitForTokenizerBuild(): Promise<void> {
-    if (!this.tokenizer) {
-      await this.tokenizerBuildPromise;
-    }
-  }
 
   private isJapanese(text: string): boolean {
     return /[一-龠ぁ-んァ-ン]/.test(text);
@@ -122,26 +72,10 @@ class NLPProcessor {
   }
 
   private getJapaneseTrigrams(query: string): string[] {
-    if (!this.tokenizer) throw new Error("Tokenizer not initialized");
 
-    // 1. 形態素解析
-    const tokens = this.tokenizer.tokenize(query);
-
-    // 2. 名詞・動詞を抽出
-    const words = tokens
-      .filter(token => token.pos === "名詞" || token.pos === "動詞")
-      .map(token => token.basic_form !== '*' ? token.basic_form : token.surface_form);
-
-    // 3. ストップワードを除去
-    const stopwords = new Set(["の", "は", "が", "を", "に", "で", "と", "も", "する", "なる"]);
-    const filteredWords = words.filter(word => !stopwords.has(word));
-
-    // 4. 重複削除
-    const uniqueWords = [...new Set(filteredWords)];
-    const cleanedTokens = [...uniqueWords].join(" ");
-
-    // 5. 3-gram の生成
-    return nlp.string.ngram(cleanedTokens, 3);
+    let text = nlp.string.removeExtraSpaces(query);
+    text = nlp.string.stem(text);
+    return nlp.string.ngram(text, 3);
   }
 
   private escapeFtsQueryString(query: string): string {
@@ -162,9 +96,7 @@ class NLPProcessor {
     tokens = nlp.tokens.setOfWords(tokens);
 
     const cleanedTokens = [...tokens].join(" ");
-    const trigrams = nlp.string.ngram(cleanedTokens, 3);
-
-    return trigrams.map(this.escapeFtsQueryString);
+    return nlp.string.ngram(cleanedTokens, 3);
   }
 }
 
@@ -220,8 +152,6 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
     if (args.query.trim() === "") {
       return [];
     }
-
-    await this.processor.waitForTokenizerBuild();
 
     const tokens = this.getCleanedTrigrams(args.query).join(" OR ");
 
