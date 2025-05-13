@@ -87,11 +87,11 @@ class NLPProcessor {
     return /[一-龠ぁ-んァ-ン]/.test(text);
   }
 
-  getCleanedTrigrams(query: string): string[] {
+  getCleanedTrigrams(query: string, base: BaseRetrievalPipeline): string[] {
     if (this.isJapanese(query)) {
       return this.getJapaneseTrigrams(query);
     } else {
-      return this.getEnglishTrigrams(query);
+      return this.getEnglishTrigrams(query, base);
     }
   }
 
@@ -118,7 +118,7 @@ class NLPProcessor {
     return nlp.string.ngram(cleanedTokens, 3);
   }
 
-  private getEnglishTrigrams(query: string): string[] {
+  private getEnglishTrigrams(query: string, base: BaseRetrievalPipeline): string[] {
     let text = nlp.string.removeExtraSpaces(query);
     text = nlp.string.stem(text);
 
@@ -133,7 +133,7 @@ class NLPProcessor {
     const cleanedTokens = [...tokens].join(" ");
     const trigrams = nlp.string.ngram(cleanedTokens, 3);
 
-    return trigrams.map(this.escapeFtsQueryString);
+    return trigrams.map(base.escapeFtsQueryString);
   }
 }
 
@@ -161,10 +161,10 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
   private getCleanedTrigrams(
     query: RetrievalPipelineRunArguments["query"],
   ): string[] {
-    return this.processor.getCleanedTrigrams(query);
+    return this.processor.getCleanedTrigrams(query, this);
   }
 
-  private escapeFtsQueryString(query: string): string {
+  public escapeFtsQueryString(query: string): string {
     const escapedDoubleQuotes = query.replace(/"/g, '""');
     return `"${escapedDoubleQuotes}"`;
   }
