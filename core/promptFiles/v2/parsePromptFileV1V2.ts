@@ -20,5 +20,5 @@ export function parsePromptFileV1V2(path: string, content: string) {
     prompt = prompt.split("</system>")[1].trim();
   }
 
-  return { name, description, systemMessage, prompt, version };
+  return { name, description, systemMessage, prompt, version, preamble };
 }
