@@ -52,7 +52,6 @@ export function slashCommandFromPromptFileV1(
     path,
     content,
   );
-  console.log(preamble);
 
   return {
     name,
