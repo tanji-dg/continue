@@ -52,6 +52,7 @@ export function slashCommandFromPromptFileV1(
     path,
     content,
   );
+  console.log(preamble);
 
   return {
     name,
@@ -60,13 +61,14 @@ export function slashCommandFromPromptFileV1(
     promptFile: path,
     params: preamble,
     run: async function* (context) {
-      const completionOptions = { ...context.completionOptions };
+      const completionOptions = {...context.completionOptions};
       if (context.params?.maxTokens !== undefined) {
         completionOptions.maxTokens = context.params.maxTokens;
       }
       if (context.params?.temperature !== undefined) {
         completionOptions.temperature = context.params.temperature;
       }
+      const userInput = extract(context.input, name);
       const [_, renderedPrompt] = await renderPromptFileV2(prompt, {
         config: context.config,
         fullInput: context.input,
