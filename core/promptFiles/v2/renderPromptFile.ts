@@ -66,10 +66,13 @@ export async function renderPromptFileV2(
   const [_, body] = getPreambleAndBody(rawContent);
 
   const contextItemsPromises: Promise<ContextItem[]>[] = [];
-  const renderedBody = body.replace(/@([^\s]+)/g, (match, name) => {
+  let renderedBody = body.replace(/@([^\s]+)/g, (match, name) => {
     contextItemsPromises.push(resolveAttachment(name, extras));
     return match;
   });
+
+  // renderedBody内に{{{ input }}}があれば、extras.fullInputに置き換える
+  renderedBody = renderedBody.replace(/{{{ input }}}/g, extras.fullInput || '');
 
   const contextItems = (await Promise.all(contextItemsPromises)).flat();
   const renderedPrompt = [
