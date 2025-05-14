@@ -48,17 +48,27 @@ export function slashCommandFromPromptFileV1(
   path: string,
   content: string,
 ): SlashCommand | null {
-  const { name, description, systemMessage, prompt } = parsePromptFileV1V2(
+  const { name, description, systemMessage, prompt, preamble } = parsePromptFileV1V2(
     path,
     content,
   );
+  console.log(preamble);
 
   return {
     name,
     description,
     prompt,
     promptFile: path,
+    params: preamble,
     run: async function* (context) {
+      const completionOptions = {...context.completionOptions};
+      if (context.params?.maxTokens !== undefined) {
+        completionOptions.maxTokens = context.params.maxTokens;
+      }
+      if (context.params?.temperature !== undefined) {
+        completionOptions.temperature = context.params.temperature;
+      }
+      const userInput = extractUserInput(context.input, name);
       const [_, renderedPrompt] = await renderPromptFileV2(prompt, {
         config: context.config,
         fullInput: context.input,
@@ -80,7 +90,7 @@ export function slashCommandFromPromptFileV1(
       for await (const chunk of context.llm.streamChat(
         messages,
         new AbortController().signal,
-        context.completionOptions,
+        completionOptions,
       )) {
         yield renderChatMessage(chunk);
       }
