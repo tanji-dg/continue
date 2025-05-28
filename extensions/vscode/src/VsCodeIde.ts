@@ -488,7 +488,7 @@ class VsCodeIde implements IDE {
       terminal = vscode.window.createTerminal(options?.terminalName);
     }
     terminal.show();
-    terminal.sendText(command, false);
+    terminal.sendText(command + (command.endsWith('\n') ? '' : '\n'), false);
   }
 
   async saveFile(fileUri: string): Promise<void> {
