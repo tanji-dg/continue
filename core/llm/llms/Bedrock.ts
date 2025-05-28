@@ -146,16 +146,31 @@ class Bedrock extends BaseLLM {
     const command = new ConverseStreamCommand(input);
 
     let response: ConverseStreamCommandOutput;
-    try {
-      response = (await client.send(command, {
-        abortSignal: signal,
-      })) as ConverseStreamCommandOutput;
-    } catch (error: unknown) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : "Unknown error";
-      throw new Error(`Failed to communicate with Bedrock API: ${message}`);
+    const maxRetries = 3;
+    let retries = 0;
+    
+    while (true) {
+      try {
+        response = (await client.send(command, {
+          abortSignal: signal,
+        })) as ConverseStreamCommandOutput;
+        break;
+      } catch (error: unknown) {
+        console.error(error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        
+        if (message.includes('Too many tokens') && retries < maxRetries) {
+          retries++;
+          console.log(`Retrying (${retries}/${maxRetries}) after 30 seconds...`);
+          
+          await new Promise(resolve => 
+            setTimeout(resolve, 30000)
+          );
+        } else {
+          throw new Error(`Failed to communicate with Bedrock API: ${message}`);
+        }
+      }
     }
-
     if (!response?.stream) {
       throw new Error("No stream received from Bedrock API");
     }
