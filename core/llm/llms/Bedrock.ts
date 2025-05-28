@@ -145,7 +145,6 @@ class Bedrock extends BaseLLM {
     const response = (await client.send(command, {
       abortSignal: signal,
     })) as ConverseStreamCommandOutput;
-
     if (!response?.stream) {
       throw new Error("No stream received from Bedrock API");
     }
