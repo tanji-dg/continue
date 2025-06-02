@@ -22,6 +22,8 @@ const GEMINI_MODEL_CONFIG = {
   slugs: ["google/gemini-2.5-pro", "google/gemini-2.0-flash"],
   apiKeyInputName: "GEMINI_API_KEY",
 };
+// 追加するエクスポート
+export const TRIAL_FIM_MODEL = LOCAL_ONBOARDING_FIM_MODEL;
 
 /**
  * We set the "best" chat + autocopmlete models by default
