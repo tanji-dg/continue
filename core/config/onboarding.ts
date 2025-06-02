@@ -8,6 +8,9 @@ export const LOCAL_ONBOARDING_CHAT_TITLE = "Llama 3.1 8B";
 export const LOCAL_ONBOARDING_EMBEDDINGS_MODEL = "nomic-embed-text:latest";
 export const LOCAL_ONBOARDING_EMBEDDINGS_TITLE = "Nomic Embed";
 
+// 追加するエクスポート
+export const TRIAL_FIM_MODEL = LOCAL_ONBOARDING_FIM_MODEL;
+
 /**
  * We set the "best" chat + autocopmlete models by default
  * whenever a user doesn't have a config.json
