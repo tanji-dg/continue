@@ -215,8 +215,7 @@ export class VsCodeIdeUtils {
     vscode.workspace
       .openTextDocument(
         vscode.Uri.parse(
-          `${
-            VsCodeExtension.continueVirtualDocumentScheme
+          `${VsCodeExtension.continueVirtualDocumentScheme
           }:${encodeURIComponent(name)}?${encodeURIComponent(contents)}`,
         ),
       )
@@ -299,8 +298,8 @@ export class VsCodeIdeUtils {
     return `${lines
       .slice(range.start.line, range.end.line)
       .join("\n")}\n${lines[
-      range.end.line < lines.length - 1 ? range.end.line : lines.length - 1
-    ].slice(0, range.end.character)}`;
+        range.end.line < lines.length - 1 ? range.end.line : lines.length - 1
+      ].slice(0, range.end.character)}`;
   }
 
   async getTerminalContents(commands = -1): Promise<string> {
@@ -632,5 +631,62 @@ export class VsCodeIdeUtils {
       console.error(e);
       return [];
     }
+  }
+
+  /**
+   * Get the SVN diff for the current workspace
+   * @param includeUnstaged If true, includes unstaged changes
+   * @returns Array of file diffs
+   */
+  async getSvnDiff(includeUnstaged: boolean = true): Promise<string[]> {
+    const workspaceFolders = this.getWorkspaceDirectories();
+    if (!workspaceFolders.length) {
+      return [];
+    }
+
+    const diffs: string[] = [];
+
+    for (const folder of workspaceFolders) {
+      try {
+        // SVN doesn't have the concept of staging like Git does
+        // So we get all changes when includeUnstaged is true
+        if (includeUnstaged) {
+          // Using 'svn diff' to get changes in working copy
+          const { stdout } = await asyncExec('svn diff', {
+            cwd: folder.fsPath,
+          });
+
+          if (stdout && stdout.trim() !== '') {
+            diffs.push(stdout);
+          }
+        }
+      } catch (e) {
+        console.error(`SVN diff error in ${folder.fsPath}:`, e);
+        // Continue with other workspace folders if one fails
+      }
+    }
+
+    return this.splitSvnDiff(diffs.join('\n'));
+  }
+
+  /**
+   * Split SVN diff output into individual file diffs
+   * @param diffString The combined diff output
+   * @returns Array of individual file diffs
+   */
+  private splitSvnDiff(diffString: string): string[] {
+    if (!diffString || diffString.trim() === '') {
+      return [];
+    }
+
+    // SVN diff header pattern: Index: path/to/file
+    const fileDiffHeaderRegex = /(?=Index: .*\n={67})/;
+    const diffs = diffString.split(fileDiffHeaderRegex);
+
+    if (diffs[0].trim() === "") {
+      diffs.shift();
+    }
+
+    return diffs;
   }
 }
