@@ -59,7 +59,10 @@ export async function getAllPromptFiles(
 
   return await Promise.all(
     promptFiles.map(async (file) => {
-      const content = await ide.readFile(file.path);
+      let content = file.content
+      if (!content) {
+        content = await ide.readFile(file.path);
+      }
       return { path: file.path, content };
     }),
   );
