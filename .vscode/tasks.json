@@ -16,7 +16,6 @@
         "panel": "new"
       }
     },
-    // Compile and bundle the extension
     {
       "label": "vscode-extension:build",
       "dependsOn": [
@@ -171,7 +170,11 @@
             "endsPattern": "."
           }
         }
-      ]
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     //
     // esbuild for the core binary
