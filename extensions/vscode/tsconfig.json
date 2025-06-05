@@ -2,17 +2,35 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2022",
-    "lib": ["ES2022", "dom", "es6", "es5", "dom.iterable", "scripthost"],
+    "lib": [
+      "ES2022",
+      "dom",
+      "es6",
+      "es5",
+      "dom.iterable",
+      "scripthost"
+    ],
     "outDir": "out/tsc/src",
-    "sourceMap": true,
+    // プロダクションビルドではsourcemapを無効化（esbuildが制御）
+    "sourceMap": false,
     "rootDir": "../../",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["mocha"] // This solves conflict between jest and mocha: https://github.com/cypress-io/cypress/issues/7435#issuecomment-631695007
+    // プロダクションビルドでは最適化を有効化
+    "removeComments": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": [
+      "mocha"
+    ] // This solves conflict between jest and mocha: https://github.com/cypress-io/cypress/issues/7435#issuecomment-631695007
   },
-  "include": ["src/**/*", "../../core/**/*.ts", "../../core/**/*.d.ts"],
+  "include": [
+    "src/**/*",
+    "../../core/**/*.ts",
+    "../../core/**/*.d.ts"
+  ],
   // core/test uses @types/jest, which conflicts with @types/mocha
   "exclude": [
     "../../core/dist/**/*",

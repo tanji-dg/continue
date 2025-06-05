@@ -6,7 +6,12 @@
     "tsc:watch:core": "tsc --project core/tsconfig.json --watch --noEmit --pretty",
     "tsc:watch:binary": "tsc --project binary/tsconfig.json --watch --noEmit --pretty",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore"
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore",
+    "build:prod": "npm run build:prod:core && npm run build:prod:gui && npm run build:prod:vscode && npm run build:prod:binary",
+    "build:prod:core": "cd core && npm run build:npm",
+    "build:prod:gui": "cd gui && npm run build",
+    "build:prod:vscode": "cd extensions/vscode && npm run build:prod",
+    "build:prod:binary": "cd binary && npm run build:prod"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^7.8.0",
