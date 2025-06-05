@@ -23,6 +23,7 @@
       ],
       "pauseForSourceMap": false,
       "outFiles": ["${workspaceFolder}/extensions/vscode/out/extension.js"],
+      "preLaunchTask": "${defaultBuildTask}",
       //"preLaunchTask": "vscode-extension:build",
       "env": {
         // "CONTROL_PLANE_ENV": "local",
