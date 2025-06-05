@@ -171,7 +171,11 @@
             "endsPattern": "."
           }
         }
-      ]
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     //
     // esbuild for the core binary
