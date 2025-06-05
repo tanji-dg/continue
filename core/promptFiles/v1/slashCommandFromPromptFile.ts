@@ -60,7 +60,7 @@ export function slashCommandFromPromptFileV1(
     promptFile: path,
     params: preamble,
     run: async function* (context) {
-      const completionOptions = {...context.completionOptions};
+      const completionOptions = { ...context.completionOptions };
       if (context.params?.maxTokens !== undefined) {
         completionOptions.maxTokens = context.params.maxTokens;
       }
