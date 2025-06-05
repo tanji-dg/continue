@@ -4,6 +4,7 @@ const { writeBuildTimestamp } = require("./utils");
 const esbuild = require("esbuild");
 
 const flags = process.argv.slice(2);
+const isProduction = flags.includes("--minify");
 
 const esbuildConfig = {
   entryPoints: ["src/extension.ts"],
@@ -12,7 +13,14 @@ const esbuildConfig = {
   external: ["vscode", "esbuild", "./xhr-sync-worker.js"],
   format: "cjs",
   platform: "node",
-  sourcemap: flags.includes("--sourcemap"),
+  // プロダクションビルドではsourcemapを無効化
+  sourcemap: !isProduction && flags.includes("--sourcemap"),
+  // プロダクションビルドではデッドコード除去を有効化
+  treeShaking: true,
+  // プロダクションビルドでは最適化を有効化
+  minify: isProduction,
+  // プロダクションビルドではコメントを削除
+  keepNames: !isProduction,
   loader: {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ".node": "file",
@@ -21,9 +29,17 @@ const esbuildConfig = {
   // To allow import.meta.path for transformers.js
   // https://github.com/evanw/esbuild/issues/1492#issuecomment-893144483
   inject: ["./scripts/importMetaUrl.js"],
-  define: { "import.meta.url": "importMetaUrl" },
+  define: {
+    "import.meta.url": "importMetaUrl",
+    // プロダクションビルドでは開発用コードを除去
+    ...(isProduction && {
+      "process.env.NODE_ENV": '"production"'
+    })
+  },
   supported: { "dynamic-import": false },
   metafile: true,
+  // プロダクションビルドでは警告を抑制
+  logLevel: isProduction ? "error" : "info",
   plugins: [
     {
       name: "on-end-plugin",
@@ -41,7 +57,8 @@ const esbuildConfig = {
             } catch (e) {
               console.error("Failed to write esbuild meta file", e);
             }
-            console.log("VS Code Extension esbuild complete"); // used verbatim in vscode tasks to detect completion
+            const buildType = isProduction ? "production" : "development";
+            console.log(`VS Code Extension esbuild complete (${buildType})`); // used verbatim in vscode tasks to detect completion
           }
         });
       },
