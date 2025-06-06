@@ -180,8 +180,16 @@ void (async () => {
         rimrafSync(path.join(__dirname, "../bin/napi-v3/win32"));
       }
 
-      // Also don't want to include cuda/shared/tensorrt binaries, they are too large
+      // Remove unused architecture binaries
       if (target.startsWith("linux")) {
+        if (arch !== "arm64") {
+          rimrafSync(path.join(__dirname, "../bin/napi-v3/linux/arm64"));
+        }
+        if (arch !== "x64") {
+          rimrafSync(path.join(__dirname, "../bin/napi-v3/linux/x64"));
+        }
+
+        // Also don't want to include cuda/shared/tensorrt binaries, they are too large
         const filesToRemove = [
           "libonnxruntime_providers_cuda.so",
           "libonnxruntime_providers_shared.so",
@@ -190,7 +198,7 @@ void (async () => {
         filesToRemove.forEach((file) => {
           const filepath = path.join(
             __dirname,
-            "../bin/napi-v3/linux/x64",
+            `../bin/napi-v3/linux/${arch}`,
             file,
           );
           if (fs.existsSync(filepath)) {
@@ -198,11 +206,28 @@ void (async () => {
           }
         });
       }
+
+      if (target.startsWith("darwin")) {
+        if (arch !== "arm64") {
+          rimrafSync(path.join(__dirname, "../bin/napi-v3/darwin/arm64"));
+        }
+        if (arch !== "x64") {
+          rimrafSync(path.join(__dirname, "../bin/napi-v3/darwin/x64"));
+        }
+      }
+
+      if (target.startsWith("win32")) {
+        if (arch !== "arm64") {
+          rimrafSync(path.join(__dirname, "../bin/napi-v3/win32/arm64"));
+        }
+        if (arch !== "x64") {
+          rimrafSync(path.join(__dirname, "../bin/napi-v3/win32/x64"));
+        }
+      }
     } catch (e) {
       console.warn("[info] Error removing unused binaries", e);
     }
   }
-  console.log("[info] Copied onnxruntime-node");
 
   // tree-sitter-wasm
   fs.mkdirSync("out", { recursive: true });
