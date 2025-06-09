@@ -18,7 +18,7 @@ void (async () => {
       ? "node scripts/package.js --pre-release --target " + platform // --yarn"
       : "node scripts/package.js --target " + platform; // --yarn";
 
-    execSync("node scripts/prepackage-cross-platform.js --target " + platform, {
+    execSync("node scripts/prepackage.js --target " + platform, {
       stdio: "inherit",
     });
     execSync(pkgCommand, { stdio: "inherit" });
