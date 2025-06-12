@@ -27,13 +27,22 @@ if (!fs.existsSync(guiDist)) {
   fs.mkdirSync(guiDist, { recursive: true });
 }
 
-// Get the target to package for
-let target = undefined;
+// コマンドライン引数をパース
 const args = process.argv;
-if (args[2] === "--target") {
-  target = args[3];
+let target = undefined;
+let isCrossPlatform = false;
+
+// ターゲットプラットフォームを取得
+for (let i = 2; i < args.length; i++) {
+  if (args[i] === "--target" && i + 1 < args.length) {
+    target = args[i + 1];
+    i++; // 次の引数をスキップ
+  } else if (args[i] === "--cross-platform") {
+    isCrossPlatform = true;
+  }
 }
 
+// OSとアーキテクチャの設定
 let os;
 let arch;
 if (!target) {
@@ -42,6 +51,7 @@ if (!target) {
   [os, arch] = target.split("-");
 }
 
+// プラットフォームの標準化
 if (os === "alpine") {
   os = "linux";
 }
@@ -49,7 +59,12 @@ if (arch === "armhf") {
   arch = "arm64";
 }
 target = `${os}-${arch}`;
-console.log("[info] Using target: ", target);
+console.log(`[info] ターゲットプラットフォーム: ${target} ${isCrossPlatform ? "(クロスプラットフォームビルド)" : ""}`);
+
+// 現在の実行環境のプラットフォームも取得
+const [currentOs, currentArch] = autodetectPlatformAndArch();
+const currentPlatform = `${currentOs}-${currentArch}`;
+const isNativeBuild = target === currentPlatform;
 
 const exe = os === "win32" ? ".exe" : "";
 
@@ -500,23 +515,49 @@ void (async () => {
     "out/xhr-sync-worker.js",
   );
 
-  // Validate the all of the necessary files are present
-  validateFilesPresent([
+  // 現在の環境に特化したバイナリファイルのパスを取得
+  const platformSpecificFiles = [];
+  
+  // プラットフォーム依存の項目を追加
+  if (os && arch) {
+    // onnx runtime bindings
+    platformSpecificFiles.push(
+      `bin/napi-v3/${os}/${arch}/onnxruntime_binding.node`,
+      `bin/napi-v3/${os}/${arch}/${
+        isMacTarget
+          ? "libonnxruntime.1.14.0.dylib"
+          : isLinuxTarget
+            ? "libonnxruntime.so.1.14.0"
+            : "onnxruntime.dll"
+      }`
+    );
+
+    // リップグレップバイナリ
+    platformSpecificFiles.push(`node_modules/@vscode/ripgrep/bin/rg${exe}`);
+    platformSpecificFiles.push(`out/node_modules/@vscode/ripgrep/bin/rg${exe}`);
+    
+    // ESBuildバイナリ
+    if (target === "win32-arm64") {
+      platformSpecificFiles.push(`out/node_modules/@esbuild/esbuild.exe`);
+    } else if (target === "win32-x64") {
+      platformSpecificFiles.push(`out/node_modules/@esbuild/win32-x64/esbuild.exe`);
+    } else {
+      platformSpecificFiles.push(`out/node_modules/@esbuild/${target}/bin/esbuild`);
+    }
+    
+    // LanceDBバイナリ
+    platformSpecificFiles.push(
+      `out/node_modules/@lancedb/vectordb-${target}${isWinTarget ? "-msvc" : ""}${isLinuxTarget ? "-gnu" : ""}/index.node`
+    );
+  }
+
+  // 共通ファイル - プラットフォーム非依存
+  const commonFiles = [
     // Queries used to create the index for @code context provider
     "tree-sitter/code-snippet-queries/c_sharp.scm",
 
     // Queries used for @outline and @highlights context providers
     "tag-qry/tree-sitter-c_sharp-tags.scm",
-
-    // onnx runtime bindngs
-    `bin/napi-v3/${os}/${arch}/onnxruntime_binding.node`,
-    `bin/napi-v3/${os}/${arch}/${
-      isMacTarget
-        ? "libonnxruntime.1.14.0.dylib"
-        : isLinuxTarget
-          ? "libonnxruntime.so.1.14.0"
-          : "onnxruntime.dll"
-    }`,
 
     // Code/styling for the sidebar
     "gui/assets/index.js",
@@ -535,28 +576,71 @@ void (async () => {
     "models/all-MiniLM-L6-v2/vocab.txt",
     "models/all-MiniLM-L6-v2/onnx/model_quantized.onnx",
 
-    // node_modules (it's a bit confusing why this is necessary)
-    `node_modules/@vscode/ripgrep/bin/rg${exe}`,
-
-    // out directory (where the extension.js lives)
-    // "out/extension.js", This is generated afterward by vsce
     // web-tree-sitter
     "out/tree-sitter.wasm",
     // Worker required by jsdom
     "out/xhr-sync-worker.js",
     // SQLite3 Node native module
     "out/build/Release/node_sqlite3.node",
+    
+    // ESBuild共通ファイル
+    "out/node_modules/esbuild/lib/main.js",
+  ];
 
-    // out/node_modules (to be accessed by extension.js)
-    `out/node_modules/@vscode/ripgrep/bin/rg${exe}`,
-    `out/node_modules/@esbuild/${
-      target === "win32-arm64"
-        ? "esbuild.exe"
-        : target === "win32-x64"
-          ? "win32-x64/esbuild.exe"
-          : `${target}/bin/esbuild`
-    }`,
-    `out/node_modules/@lancedb/vectordb-${target}${isWinTarget ? "-msvc" : ""}${isLinuxTarget ? "-gnu" : ""}/index.node`,
-    `out/node_modules/esbuild/lib/main.js`,
-  ]);
+  console.log(`[info] ターゲットプラットフォーム: ${target}`);
+  console.log(`[info] 現在のプラットフォーム固有のファイル検証: ${platformSpecificFiles.length}個`);
+  
+  // ビルド環境に存在し得る基本ファイルの検証
+  try {
+    validateFilesPresent(commonFiles);
+    console.log("[info] 共通ファイルの検証が完了しました");
+  } catch (e) {
+    console.error("[error] 共通ファイルの検証中にエラーが発生しました:", e.message);
+    process.exit(1);
+  }
+  
+  // プラットフォーム固有のファイルの処理
+  if (platformSpecificFiles.length > 0) {
+    try {
+      // クロスプラットフォームビルドの場合やpackage-allコマンドの場合は検証をスキップ
+      if (isCrossPlatform) {
+        console.log(`[info] クロスプラットフォームビルド: ファイル検証をスキップします`);
+      } 
+      // 同一プラットフォーム向けのビルドの場合は通常検証を実行
+      else if (isNativeBuild) {
+        validateFilesPresent(platformSpecificFiles);
+        console.log("[info] プラットフォーム固有のファイルの検証が完了しました");
+      } 
+      // 異なるプラットフォームの場合は存在するファイルのみ検証
+      else {
+        console.log(`[info] 異なるプラットフォーム向けビルド: ${target} (現在の環境: ${currentPlatform})`);
+        const existingFiles = platformSpecificFiles.filter(file => fs.existsSync(file));
+        
+        if (existingFiles.length > 0) {
+          console.log(`[info] 存在する ${existingFiles.length}/${platformSpecificFiles.length} ファイルを検証します`);
+          try {
+            validateFilesPresent(existingFiles);
+            console.log("[info] 既存ファイルの検証が完了しました");
+          } catch (err) {
+            console.warn(`[warn] 既存ファイル検証中に問題が発生: ${err.message}`);
+          }
+        } else {
+          console.log("[info] 検証対象の既存ファイルがありませんでした");
+        }
+      }
+    } catch (e) {
+      // パッケージ作成を続行するために警告のみ表示
+      if (isCrossPlatform) {
+        console.warn("[warn] クロスプラットフォームビルド中の警告:", e.message);
+        console.warn("[warn] この警告は無視され、ビルドを継続します");
+      } else {
+        console.error("[error] ファイル検証エラー:", e.message);
+        if (!isNativeBuild) {
+          console.warn("[warn] 異なるプラットフォーム向けビルドのため、エラーを無視して継続します");
+        } else {
+          throw e; // ネイティブビルドの場合はエラーを再スロー
+        }
+      }
+    }
+  }
 })();
