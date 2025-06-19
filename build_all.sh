@@ -7,4 +7,4 @@ cd extensions/vscode/
 nvm use v20.19.0 
 npm run esbuild
 npm run package-all
-cp -v build/*.vsix ~/d-out-tanji
+cp -vu build/*-*.vsix ~/d-out-tanji
