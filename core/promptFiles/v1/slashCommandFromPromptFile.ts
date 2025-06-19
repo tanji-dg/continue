@@ -67,7 +67,6 @@ export function slashCommandFromPromptFileV1(
       if (context.params?.temperature !== undefined) {
         completionOptions.temperature = context.params.temperature;
       }
-      const userInput = extract(context.input, name);
       const [_, renderedPrompt] = await renderPromptFileV2(prompt, {
         config: context.config,
         fullInput: context.input,
