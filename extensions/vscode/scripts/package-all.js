@@ -120,6 +120,23 @@ function forceCleanup() {
     console.log(`[info] プラットフォーム ${platform} 用の強制クリーンアップを実行中...`);
     forceCleanup();
     
+    // 追加: buildディレクトリの .vsix 以外をクリーンアップ
+    const buildPath = path.join(__dirname, "..", "build");
+    if (fs.existsSync(buildPath)) {
+      try {
+        const files = fs.readdirSync(buildPath);
+        for (const file of files) {
+          if (!file.endsWith('.vsix') && file !== 'meta.json') {
+            const filePath = path.join(buildPath, file);
+            rimrafSync(filePath, { force: true });
+            console.log(`[info] build ディレクトリ内 ${file} をクリーンアップ`);
+          }
+        }
+      } catch (e) {
+        console.warn(`[warn] build ディレクトリ内クリーンアップエラー: ${e.message}`);
+      }
+    }
+
     const pkgCommand = isPreRelease
       ? `node scripts/package.js --pre-release --target ${platform}`
       : `node scripts/package.js --target ${platform}`;
