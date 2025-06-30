@@ -398,12 +398,12 @@ export function getGlobalAssistantsPath(): string {
 
 export function readAllGlobalPromptFiles(
   folderPath: string = getGlobalPromptsPath(),
-): { path: string; content: string }[] {
+): { path: string; content: string | null }[] {
   if (!fs.existsSync(folderPath)) {
     return [];
   }
   const files = fs.readdirSync(folderPath);
-  const promptFiles: { path: string; content: string }[] = [];
+  const promptFiles: { path: string; content: string | null }[] = [];
   files.forEach((file) => {
     const filepath = path.join(folderPath, file);
     const stats = fs.statSync(filepath);
@@ -412,8 +412,8 @@ export function readAllGlobalPromptFiles(
       const nestedPromptFiles = readAllGlobalPromptFiles(filepath);
       promptFiles.push(...nestedPromptFiles);
     } else if (file.endsWith(".prompt")) {
-      const content = fs.readFileSync(filepath, "utf8");
-      promptFiles.push({ path: filepath, content });
+      //const content = fs.readFileSync(filepath, "utf8");
+      promptFiles.push({ path: filepath, content: null });
     }
   });
 
