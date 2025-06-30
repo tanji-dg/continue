@@ -57,24 +57,19 @@ export default defineConfig(({ command, mode }) => {
       globals: true,
       environment: "jsdom",
       setupFiles: "./src/util/test/setupTests.ts",
-    },
-  },
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/util/test/setupTests.ts",
-    onConsoleLog(log, type) {
-      if (type === "stderr") {
-        if (
-          [
-            "contentEditable",
-            "An update to Chat inside a test was not wrapped in act",
-          ].some((text) => log.includes(text))
-        ) {
-          return false;
+      onConsoleLog(log, type) {
+        if (type === "stderr") {
+          if (
+            [
+              "contentEditable",
+              "An update to Chat inside a test was not wrapped in act",
+            ].some((text) => log.includes(text))
+          ) {
+            return false;
+          }
         }
-      }
-      return true;
+        return true;
+      },
     },
-  },
+  };
 });
