@@ -3,7 +3,6 @@
 #export NVM_DIR="$HOME/.nvm"
 #[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-npm run build:prod
 cd extensions/vscode/
 #nvm use v20.19.0 
 npm run build:prod
