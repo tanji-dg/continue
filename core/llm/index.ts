@@ -1026,14 +1026,9 @@ export abstract class BaseLLM implements ILLM {
             completionOptions,
           )) {
             if (chunk.role === "assistant") {
-<<<<<<< HEAD
-              completion += this._formatChatMessage(chunk);
-              yield chunk;
-=======
               const content = stripImages(chunk.content);
               completion += content;
               yield chunk;
->>>>>>> 0882807cc (Applyが正常に動作するように修正。)
             } else if (chunk.role === "thinking") {
               const content = stripImages(chunk.content);
               thinking += content;
