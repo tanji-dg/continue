@@ -75,7 +75,8 @@ const isArmTarget =
   target === "linux-arm64" ||
   target === "win32-arm64";
 
-void (async () => {
+(async () => {
+  try {
   console.log("[info] Packaging extension for target ", target);
 
   // Make sure we have an initial timestamp file
@@ -411,6 +412,11 @@ void (async () => {
   // 現在の環境に特化したバイナリファイルのパスを取得
   const platformSpecificFiles = [];
   
+  // Define platform-specific boolean flags
+  const isMacTarget = os === "darwin";
+  const isLinuxTarget = os === "linux";
+  const isWinTarget = os === "win32";
+
   // プラットフォーム依存の項目を追加
   if (os && arch) {
     // onnx runtime bindings
@@ -535,5 +541,9 @@ void (async () => {
         }
       }
     }
+  }
+  } catch (error) {
+    console.error("[error] An unexpected error occurred:", error);
+    process.exit(1);
   }
 })();
