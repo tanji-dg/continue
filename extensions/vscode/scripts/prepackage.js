@@ -410,6 +410,23 @@ void (async () => {
     ),
   );
 
+  // Also copy from core
+  await new Promise((resolve, reject) => {
+    ncp(
+      path.join(__dirname, "../../../core/node_modules/@lancedb"),
+      path.join(__dirname, "../out/node_modules/@lancedb"),
+      { dereference: true },
+      (error) => {
+        if (error) {
+          console.warn("[error] Error copying @lancedb files", error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      },
+    );
+  });
+
   // delete esbuild/bin because platform-specific @esbuild is downloaded
   fs.rmSync(`out/node_modules/esbuild/bin`, { recursive: true });
 
