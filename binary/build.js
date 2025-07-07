@@ -3,13 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const ncp = require("ncp").ncp;
 const { rimrafSync } = require("rimraf");
-const { validateFilesPresent } = require("../scripts/util");
+const { validateFilesPresent, execCmdSync, autodetectPlatformAndArch } = require("../scripts/util");
 const { ALL_TARGETS, TARGET_TO_LANCEDB } = require("./utils/targets");
 const { fork } = require("child_process");
 const {
   installAndCopyNodeModules,
 } = require("../extensions/vscode/scripts/install-copy-nodemodule");
 const { bundleBinary } = require("./utils/bundle-binary");
+const { downloadRipgrep } = require("./utils/ripgrep");
 
 const bin = path.join(__dirname, "bin");
 const out = path.join(__dirname, "out");
@@ -84,6 +85,7 @@ async function buildWithEsbuild() {
 
   cleanSlate();
 
+  const [currentPlatform, currentArch] = autodetectPlatformAndArch();
   // Informs of where to look for node_sqlite3.node https://www.npmjs.com/package/bindings#:~:text=The%20searching%20for,file%20is%20found
   // This is only needed for our `pkg` command at build time
   fs.writeFileSync(
@@ -223,7 +225,7 @@ async function buildWithEsbuild() {
     );
 
     // Download and install ripgrep for the target
-    await downloadRipgrepForTarget(target, targetDir);
+    await downloadRipgrep(target, targetDir);
 
     // Informs the `continue-binary` of where to look for node_sqlite3.node
     // https://www.npmjs.com/package/bindings#:~:text=The%20searching_for,file_is_found
