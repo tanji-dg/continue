@@ -470,19 +470,19 @@
         {
           "command": "continue.focusContinueInput"
         },
-      {
+        {
           "command": "continue.focusContinueInputWithoutClear"
         },
-      {
+        {
           "command": "continue.debugTerminal"
         },
-      {
+        {
           "command": "continue.toggleFullScreen"
         },
-      {
+        {
           "command": "continue.newSession"
         },
-      {
+        {
           "command": "continue.enterEnterpriseLicenseKey"
         },
         {
@@ -508,32 +508,32 @@
           "group": "Continue",
           "when": "editorHasSelection"
         },
-      {
+        {
           "command": "continue.focusEdit",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.writeCommentsForCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.writeDocstringForCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.fixCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.optimizeCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.fixGrammar",
           "group": "Continue",
           "when": "editorHasSelection && editorLangId == 'markdown' && !editorReadonly"
@@ -551,22 +551,22 @@
           "group": "navigation@1",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.viewHistory",
           "group": "navigation@2",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.toggleFullScreen",
           "group": "navigation@3",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.openConfigPage",
           "group": "navigation@4",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.clearConsole",
           "group": "navigation@1",
           "when": "view == continue.continueConsoleView"
@@ -578,7 +578,7 @@
           "group": "navigation@1",
           "when": "activeWebviewPanelId == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.viewHistory",
           "group": "navigation@2",
           "when": "activeWebviewPanelId == continue.continueGUIView"
@@ -664,6 +664,7 @@
     "package-all": "node scripts/package-all.js",
     "package:pre-release": "node scripts/package.js --pre-release",
     "build:rust": "cargo-cp-artifact -ac sync sync.node -- cargo build --manifest-path ../../sync/Cargo.toml --message-format=json-render-diagnostics",
+    "build:prod": "npm run esbuild-base -- --minify",
     "build-debug:rust": "npm run build:rust --",
     "build-release:rust": "npm run build:rust -- --release",
     "e2e:compile": "tsc -p ./tsconfig.e2e.json",
@@ -718,7 +719,8 @@
     "rimraf": "^5.0.5",
     "typescript": "^5.6.3",
     "vite": "^4.5.14",
-    "vscode-extension-tester": "^8.14.1"
+    "vscode-extension-tester": "^8.14.1",
+    "why-is-node-running": "^3.2.2"
   },
   "dependencies": {
     "@continuedev/config-types": "^1.0.14",
