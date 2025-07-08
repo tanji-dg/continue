@@ -199,55 +199,11 @@ async function buildWithEsbuild() {
   const buildBinaryPromises = [];
   console.log("[info] Building binaries with pkg...");
   for (const target of targets) {
-    const targetDir = `bin/${target}`;
-    fs.mkdirSync(targetDir, { recursive: true });
-    console.log(`[info] Building ${target}...`);
-    execCmdSync(
-      `npx pkg --no-bytecode --public-packages "*" --public --compress GZip pkgJson/${target} --out-path ${targetDir}`,
-    );
-
-    // Download and unzip prebuilt sqlite3 binary for the target
-    console.log("[info] Downloading node-sqlite3");
-
-    const downloadUrl =
-      // node-sqlite3 doesn't have a pre-built binary for win32-arm64
-      target === "win32-arm64"
-        ? "https://continue-server-binaries.s3.us-west-1.amazonaws.com/win32-arm64/node_sqlite3.tar.gz"
-        : `https://github.com/TryGhost/node-sqlite3/releases/download/v5.1.7/sqlite3-v5.1.7-napi-v6-${target
-        }.tar.gz`;
-
-    execCmdSync(`curl -L -o ${targetDir}/build.tar.gz ${downloadUrl}`);
-    execCmdSync(`cd ${targetDir} && tar -xvzf build.tar.gz`);
-
-    // Copy to build directory for testing
-    try {
-      const [platform, arch] = target.split("-");
-      if (platform === currentPlatform && arch === currentArch) {
-        fs.copyFileSync(
-          `${targetDir}/build/Release/node_sqlite3.node`,
-          `build/node_sqlite3.node`,
-        );
-      }
-    } catch (error) {
-      console.log("[warn] Could not copy node_sqlite to build");
-      console.log(error);
-    }
-
-    fs.unlinkSync(`${targetDir}/build.tar.gz`);
-
-    // copy @lancedb to bin folders
-    console.log("[info] Copying @lancedb files to bin");
-    fs.copyFileSync(
-      `node_modules/${TARGET_TO_LANCEDB[target]}/index.node`,
-      `${targetDir}/index.node`,
-    );
-
-    // Download and install ripgrep for the target
-    await downloadRipgrepForTarget(target, targetDir);
-
-    // Informs the `continue-binary` of where to look for node_sqlite3.node
-    // https://www.npmjs.com/package/bindings#:~:text=The%20searching_for,file_is_found
-    fs.writeFileSync(`${targetDir}/package.json`, "");
+<<<<<<< HEAD
+    buildBinaryPromises.push(bundleBinary(target));
+=======
+    buildBinaryPromises.push(bundleBinary(target));
+>>>>>>> 3dfbf2299 (動作するように各種修正)
   }
   await Promise.all(buildBinaryPromises).catch(() => {
     console.error("[error] Failed to build binaries");

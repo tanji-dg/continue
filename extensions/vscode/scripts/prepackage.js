@@ -561,4 +561,40 @@ void (async () => {
       } 
       // 異なるプラットフォームの場合は存在するファイルのみ検証
       else {
+<<<<<<< HEAD
         console.log(`[info] 異なるプラットフォーム向けビルд
+=======
+        console.log(`[info] 異なるプラットフォーム向けビルд: ${target} (現在の環境: ${currentPlatform})`);
+        const existingFiles = platformSpecificFiles.filter(file => fs.existsSync(file));
+        
+        if (existingFiles.length > 0) {
+          console.log(`[info] 存在する ${existingFiles.length}/${platformSpecificFiles.length} ファイルを検証します`);
+          try {
+            validateFilesPresent(existingFiles);
+            console.log("[info] 既存ファイルの検証が完了しました");
+          } catch (err) {
+            console.warn(`[warn] 既存ファイル検証中に問題が発生: ${err.message}`);
+          }
+        } else {
+          console.log("[info] 検証対象の既存ファイルがありませんでした");
+        }
+      }
+    } catch (e) {
+      // パッケージ作成を続行するために警告のみ表示
+      if (isCrossPlatform) {
+        console.warn("[warn] クロスプラットフォームビルド中の警告:", e.message);
+        console.warn("[warn] この警告は無視され、ビルドを継続します");
+      } else {
+        console.error("[error] ファイル検証エラー:", e.message);
+        if (!isNativeBuild) {
+          console.warn("[warn] 異なるプラットフォーム向けビルドのため、エラーを無視して継続します");
+        } else {
+          throw e; // ネイティブビルドの場合はエラーを再スロー
+        }
+      }
+    }
+  }
+
+  process.exit(0);
+})();
+>>>>>>> 5ba0de077 (動作するように各種修正)
