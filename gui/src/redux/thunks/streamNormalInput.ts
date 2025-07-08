@@ -1,6 +1,7 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
-import { LLMFullCompletionOptions } from "core";
+import { LLMFullCompletionOptions, TextMessagePart } from "core";
 import { modelSupportsTools } from "core/llm/autodetect";
+import { getSystemMessage } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { selectActiveTools } from "../selectors/selectActiveTools";
 import { selectCurrentToolCall } from "../selectors/selectCurrentToolCall";
@@ -25,11 +26,12 @@ export const streamNormalInput = createAsyncThunk<
   void,
   {
     legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
+    systemMessages?: TextMessagePart[];
   },
   ThunkApiType
 >(
   "chat/streamNormalInput",
-  async ({ legacySlashCommandData }, { dispatch, extra, getState }) => {
+  async ({ legacySlashCommandData, systemMessages }, { dispatch, extra, getState }) => {
     const state = getState();
     const selectedChatModel = selectSelectedChatModel(state);
 
@@ -69,7 +71,10 @@ export const streamNormalInput = createAsyncThunk<
     });
     const { messages, appliedRules, appliedRuleIndex } = constructMessages(
       withoutMessageIds,
-      baseSystemMessage,
+      getSystemMessage({
+        baseSystemMessage,
+        systemMessages,
+      }),
       state.config.config.rules,
       state.ui.ruleSettings,
     );

@@ -3,14 +3,13 @@ const fs = require("fs");
 const path = require("path");
 const ncp = require("ncp").ncp;
 const { rimrafSync } = require("rimraf");
-const { validateFilesPresent, execCmdSync, autodetectPlatformAndArch } = require("../scripts/util");
+const { validateFilesPresent } = require("../scripts/util");
 const { ALL_TARGETS, TARGET_TO_LANCEDB } = require("./utils/targets");
 const { fork } = require("child_process");
 const {
   installAndCopyNodeModules,
 } = require("../extensions/vscode/scripts/install-copy-nodemodule");
 const { bundleBinary } = require("./utils/bundle-binary");
-const { downloadRipgrep } = require("./utils/ripgrep");
 
 const bin = path.join(__dirname, "bin");
 const out = path.join(__dirname, "out");
@@ -85,7 +84,6 @@ async function buildWithEsbuild() {
 
   cleanSlate();
 
-  const [currentPlatform, currentArch] = autodetectPlatformAndArch();
   // Informs of where to look for node_sqlite3.node https://www.npmjs.com/package/bindings#:~:text=The%20searching%20for,file%20is%20found
   // This is only needed for our `pkg` command at build time
   fs.writeFileSync(
@@ -181,55 +179,7 @@ async function buildWithEsbuild() {
   const buildBinaryPromises = [];
   console.log("[info] Building binaries with pkg...");
   for (const target of targets) {
-    const targetDir = `bin/${target}`;
-    fs.mkdirSync(targetDir, { recursive: true });
-    console.log(`[info] Building ${target}...`);
-    execCmdSync(
-      `npx pkg --no-bytecode --public-packages "*" --public --compress GZip pkgJson/${target} --out-path ${targetDir}`,
-    );
-
-    // Download and unzip prebuilt sqlite3 binary for the target
-    console.log("[info] Downloading node-sqlite3");
-
-    const downloadUrl =
-      // node-sqlite3 doesn't have a pre-built binary for win32-arm64
-      target === "win32-arm64"
-        ? "https://continue-server-binaries.s3.us-west-1.amazonaws.com/win32-arm64/node_sqlite3.tar.gz"
-        : `https://github.com/TryGhost/node-sqlite3/releases/download/v5.1.7/sqlite3-v5.1.7-napi-v6-${target
-        }.tar.gz`;
-
-    execCmdSync(`curl -L -o ${targetDir}/build.tar.gz ${downloadUrl}`);
-    execCmdSync(`cd ${targetDir} && tar -xvzf build.tar.gz`);
-
-    // Copy to build directory for testing
-    try {
-      const [platform, arch] = target.split("-");
-      if (platform === currentPlatform && arch === currentArch) {
-        fs.copyFileSync(
-          `${targetDir}/build/Release/node_sqlite3.node`,
-          `build/node_sqlite3.node`,
-        );
-      }
-    } catch (error) {
-      console.log("[warn] Could not copy node_sqlite to build");
-      console.log(error);
-    }
-
-    fs.unlinkSync(`${targetDir}/build.tar.gz`);
-
-    // copy @lancedb to bin folders
-    console.log("[info] Copying @lancedb files to bin");
-    fs.copyFileSync(
-      `node_modules/${TARGET_TO_LANCEDB[target]}/index.node`,
-      `${targetDir}/index.node`,
-    );
-
-    // Download and install ripgrep for the target
-    await downloadRipgrep(target, targetDir);
-
-    // Informs the `continue-binary` of where to look for node_sqlite3.node
-    // https://www.npmjs.com/package/bindings#:~:text=The%20searching_for,file_is_found
-    fs.writeFileSync(`${targetDir}/package.json`, "");
+    buildBinaryPromises.push(bundleBinary(target));
   }
   await Promise.all(buildBinaryPromises).catch(() => {
     console.error("[error] Failed to build binaries");

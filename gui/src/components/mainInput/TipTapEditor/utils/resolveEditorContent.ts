@@ -8,6 +8,7 @@ import {
   MessagePart,
   RangeInFile,
   SlashCommandDescWithSource,
+  TextMessagePart,
 } from "core";
 import { stripImages } from "core/util/messageContent";
 import { IIdeMessenger } from "../../../../context/IdeMessenger";
@@ -37,6 +38,7 @@ interface ResolveEditorContentOutput {
         input: string;
       }
     | undefined;
+  systemMessages: TextMessagePart[];
 }
 
 /**
@@ -63,6 +65,7 @@ export async function resolveEditorContent({
     slashedParts,
     contextRequests: slashContextRequests,
     legacyCommandWithInput,
+    systemMessageParts,
   } = await renderSlashCommandPrompt(
     ideMessenger,
     slashCommandName,
@@ -102,6 +105,7 @@ export async function resolveEditorContent({
     selectedCode,
     content: slashedParts,
     legacyCommandWithInput,
+    systemMessages: systemMessageParts,
   };
 }
 
