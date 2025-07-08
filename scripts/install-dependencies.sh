@@ -30,14 +30,17 @@ fi
 echo "Installing root-level dependencies..."
 npm install
 
-echo "Building packages..."
-for dir in packages/config-types packages/config-yaml packages/fetch packages/hub packages/llm-info packages/openai-adapters; do
-    echo "Entering $dir..."
-    pushd $dir
-    npm install
-    npm run build
-    popd
-done
+echo "Building openai-adapters..."
+pushd packages/openai-adapters
+npm install
+npm run build
+popd
+
+echo "Building config-yaml..."
+pushd packages/config-yaml
+npm install
+npm run build
+popd
 
 echo "Installing Core extension dependencies..."
 pushd core

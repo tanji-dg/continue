@@ -172,6 +172,7 @@ class Bedrock extends BaseLLM {
         }
       }
     }
+
     if (!response?.stream) {
       throw new Error("No stream received from Bedrock API");
     }
@@ -367,13 +368,13 @@ class Bedrock extends BaseLLM {
 
     return {
       modelId: options.model,
-      messages: convertedMessages,
       system: systemMessage
         ? shouldCacheSystemMessage
           ? [{ text: systemMessage }, { cachePoint: { type: "default" } }]
           : [{ text: systemMessage }]
         : undefined,
       toolConfig: toolConfig,
+      messages: convertedMessages,
       inferenceConfig: {
         maxTokens: options.maxTokens,
         temperature: options.temperature,

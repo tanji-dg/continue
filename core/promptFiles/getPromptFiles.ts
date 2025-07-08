@@ -142,6 +142,9 @@ export async function getAllPromptFiles(
 
   return await Promise.all(
     promptFiles.map(async (file) => {
+      if (file.path.startsWith("builtin:")) {
+        return file;
+      }
       let content = file.content
       if (!content) {
         content = await ide.readFile(file.path);
