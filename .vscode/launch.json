@@ -23,11 +23,12 @@
       ],
       "pauseForSourceMap": false,
       "outFiles": ["${workspaceFolder}/extensions/vscode/out/extension.js"],
-      "preLaunchTask": "vscode-extension:build",
-      "postDebugTask": "Terminate All Tasks",
+      //"preLaunchTask": "vscode-extension:build",
+      "preLaunchTask": "${defaultBuildTask}",
+      //"postDebugTask": "Terminate All Tasks",
       "env": {
         // "CONTROL_PLANE_ENV": "local",
-        "CONTINUE_GLOBAL_DIR": "${workspaceFolder}/extensions/.continue-debug"
+        // "CONTINUE_GLOBAL_DIR": "${workspaceFolder}/extensions/.continue-debug"
         // "staging" for the preview deployment	        "CONTINUE_GLOBAL_DIR": "${workspaceFolder}/extensions/.continue-debug"
         // "local" for entirely local development of control plane/proxy
       }
