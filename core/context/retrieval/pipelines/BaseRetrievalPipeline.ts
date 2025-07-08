@@ -277,7 +277,10 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
   }
 
   protected async retrieveWithTools(input: string): Promise<Chunk[]> {
-    const toolSelectionPrompt = `Given the following user input: \"${input}\"\n\nAvailable tools:\n${AVAILABLE_TOOLS.map((tool) => {
+    const toolSelectionPrompt = `Given the following user input: "${input}"
+
+Available tools:
+${AVAILABLE_TOOLS.map((tool) => {
   const requiredParams = tool.function.parameters?.required || [];
   const properties = tool.function.parameters?.properties || {};
   const paramDescriptions = requiredParams
@@ -286,8 +289,19 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
     )
     .join(", ");
 
-  return `- ${tool.function.name}: ${tool.function.description}\n  Required arguments: ${paramDescriptions || "none"}`;
-}).join("\n")}\n\nDetermine which tools should be used to answer this query. You should feel free to use multiple tools when they would be helpful for comprehensive results. Respond ONLY a JSON object containing the following and nothing else:\n{\n  \"tools\": [\n    {\n      \"name\": \"<tool_name>\",\n      \"args\": { \"<required_parameter_name>\": \"<required_parameter_value>\" }\n    }\n  ]\n}`;
+  return `- ${tool.function.name}: ${tool.function.description}
+  Required arguments: ${paramDescriptions || "none"}`;
+}).join("\n")}
+
+Determine which tools should be used to answer this query. You should feel free to use multiple tools when they would be helpful for comprehensive results. Respond ONLY a JSON object containing the following and nothing else:
+{
+  "tools": [
+    {
+      "name": "<tool_name>",
+      "args": { "<required_parameter_name>": "<required_parameter_value>" }
+    }
+  ]
+}`;
 
     // Get LLM response for tool selection
     const toolSelectionResponse = await this.options.llm.chat(
@@ -355,8 +369,8 @@ export default class BaseRetrievalPipeline implements IRetrievalPipeline {
         content: contextItem.content,
         startLine: -1,
         endLine: -1,
-        digest: `file:\/\/\/${cleanedFilepath}`,
-        filepath: `file:\/\/\/${cleanedFilepath}`,
+        digest: `file:///${cleanedFilepath}`,
+        filepath: `file:///${cleanedFilepath}`,
         index: i,
       });
     }

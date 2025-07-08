@@ -536,7 +536,7 @@ void (async () => {
       } 
       // 異なるプラットフォームの場合は存在するファイルのみ検証
       else {
-        console.log(`[info] 異なるプラットフォーム向けビルド: ${target} (現在の環境: ${currentPlatform})`);
+        console.log(`[info] 異なるプラットフォーム向けビルд: ${target} (現在の環境: ${currentPlatform})`);
         const existingFiles = platformSpecificFiles.filter(file => fs.existsSync(file));
         
         if (existingFiles.length > 0) {
@@ -566,4 +566,6 @@ void (async () => {
       }
     }
   }
+
+  process.exit(0);
 })();

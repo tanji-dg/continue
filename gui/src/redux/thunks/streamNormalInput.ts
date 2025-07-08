@@ -1,7 +1,8 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
-import { LLMFullCompletionOptions, ModelDescription, Tool } from "core";
+<<<<<<< HEAD
+import { LLMFullCompletionOptions, ModelDescription, TextMessagePart, Tool } from "core";
 import { modelSupportsTools } from "core/llm/autodetect";
-import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
+import { getSystemMessage } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import { selectActiveTools } from "../selectors/selectActiveTools";
@@ -124,11 +125,12 @@ export const streamNormalInput = createAsyncThunk<
   void,
   {
     legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
+    systemMessages?: TextMessagePart[];
   },
   ThunkApiType
 >(
   "chat/streamNormalInput",
-  async ({ legacySlashCommandData }, { dispatch, extra, getState }) => {
+  async ({ legacySlashCommandData, systemMessages }, { dispatch, extra, getState }) => {
     const state = getState();
     const selectedChatModel = selectSelectedChatModel(state);
 
@@ -169,7 +171,10 @@ export const streamNormalInput = createAsyncThunk<
     });
     const { messages, appliedRules, appliedRuleIndex } = constructMessages(
       withoutMessageIds,
-      baseSystemMessage,
+      getSystemMessage({
+        baseSystemMessage,
+        systemMessages,
+      }),
       state.config.config.rules,
       state.ui.ruleSettings,
     );
@@ -260,6 +265,7 @@ export const streamNormalInput = createAsyncThunk<
             ...(!!activeTools.length && {
               tools: activeTools.map((tool) => tool.function.name),
             }),
+<<<<<<< HEAD
             ...(appliedRules.length > 0 && {
               rules: appliedRules.map((rule) => ({
                 id: getRuleId(rule),
