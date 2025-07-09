@@ -1,5 +1,4 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
-<<<<<<< HEAD
 import { LLMFullCompletionOptions, ModelDescription, TextMessagePart, Tool } from "core";
 import { modelSupportsTools } from "core/llm/autodetect";
 import { getSystemMessage } from "core/llm/rules/getSystemMessageWithRules";
