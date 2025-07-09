@@ -290,7 +290,7 @@ void (async () => {
     } else {
       // Download esbuild from npm in tmp and copy over
       console.log("[info] npm installing esbuild binary");
-      await Promise.all([copyEsbuild(target), copySqlite(target)]);
+      await installAndCopyNodeModules("esbuild@0.17.19", "@esbuild");
     }
   }
 
