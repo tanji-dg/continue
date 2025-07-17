@@ -35,6 +35,7 @@
     "@types/tar": "^6.1.13",
     "@types/uuid": "^9.0.7",
     "@types/win-ca": "^3.5.4",
+    "@types/kuromoji": "^0.1.3",
     "cross-env": "^7.0.3",
     "esbuild": "0.17.19",
     "eslint": "^8",
@@ -49,6 +50,7 @@
     "vitest": "^3.1.4"
   },
   "dependencies": {
+    "kuromoji": "^0.1.2",
     "@aws-sdk/client-bedrock-runtime": "^3.779.0",
     "@aws-sdk/client-sagemaker-runtime": "^3.777.0",
     "@aws-sdk/credential-providers": "^3.778.0",

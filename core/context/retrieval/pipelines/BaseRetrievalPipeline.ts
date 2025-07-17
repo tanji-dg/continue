@@ -71,12 +71,12 @@ interface IpadicFeatures {
   conjugated_type: string;
   conjugated_form: string;
   basic_form: string;
-  reading: string;
-  pronunciation: string;
+  reading?: string;
+  pronunciation?: string;
 }
 
 class NLPProcessor {
-  private tokenizer: kuromoji.Tokenizer<IpadicFeatures> | null = null; // 型を修正
+  private tokenizer: kuromoji.Tokenizer<IpadicFeatures> | null = null;
 
   private tokenizerBuildPromise: Promise<kuromoji.Tokenizer<IpadicFeatures>>; // 型を修正
 
@@ -86,15 +86,15 @@ class NLPProcessor {
     console.log(dicPath);
 
     this.tokenizerBuildPromise = new Promise<kuromoji.Tokenizer<IpadicFeatures>>((resolve, reject) => {  // 型を修正
-      kuromoji.builder({ dicPath: dicPath }).build((err, tokenizer) => {
+      kuromoji.builder({ dicPath: dicPath }).build((err: Error, tokenizer: kuromoji.Tokenizer<IpadicFeatures>) => {
         if (err) {
           console.error("Kuromoji tokenizer error:", err);
-          reject(err); // エラーが発生したらPromiseをreject
+          reject(err);
           return;
         }
-        this.tokenizer = tokenizer as kuromoji.Tokenizer<IpadicFeatures>; // 型アサーションを追加
+        this.tokenizer = tokenizer;
         console.log("Kuromoji tokenizer initialized.");
-        resolve(tokenizer as kuromoji.Tokenizer<IpadicFeatures>); // 型アサーションを追加
+        resolve(tokenizer);
       });
     });
   }
@@ -128,23 +128,19 @@ class NLPProcessor {
 
     // 2. 名詞・動詞を抽出
     const words = tokens
-      .filter(token => token.pos === "名詞" || token.pos === "動詞")
-      .map(token => token.basic_form !== '*' ? token.basic_form : token.surface_form);
+      .filter((token: IpadicFeatures) => token.pos === "名詞" || token.pos === "動詞")
+      .map((token: IpadicFeatures) => token.basic_form !== '*' ? token.basic_form : token.surface_form);
 
     // 3. ストップワードを除去
     const stopwords = new Set(["の", "は", "が", "を", "に", "で", "と", "も", "する", "なる"]);
-    const filteredWords = words.filter(word => !stopwords.has(word));
+    const filteredWords = words.filter((word: string) => !stopwords.has(word));
 
     // 4. 重複削除
     const uniqueWords = [...new Set(filteredWords)];
     const cleanedTokens = [...uniqueWords].join(" ");
 
     // 5. 3-gram の生成
-<<<<<<< HEAD
     return nlp.string.ngram(cleanedTokens, 3);
-=======
-    return nlp.string.ngram(cleanedTokens, 3);
->>>>>>> 97f42d6fd (全文検索が機能していなかったのを修正。)
   }
 
   private getEnglishTrigrams(query: string): string[] {
@@ -153,8 +149,8 @@ class NLPProcessor {
 
     let tokens = nlp.string
       .tokenize(text, true)
-      .filter((token: any) => token.tag === "word")
-      .map((token: any) => token.value);
+      .filter((token: { tag: string }) => token.tag === "word")
+      .map((token: { value: string }) => token.value);
 
     tokens = nlp.tokens.removeWords(tokens);
     tokens = nlp.tokens.setOfWords(tokens);

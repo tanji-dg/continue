@@ -264,10 +264,9 @@ export const streamNormalInput = createAsyncThunk<
             ...(!!activeTools.length && {
               tools: activeTools.map((tool) => tool.function.name),
             }),
-<<<<<<< HEAD
             ...(appliedRules.length > 0 && {
               rules: appliedRules.map((rule) => ({
-                id: getRuleId(rule),
+                id: rule.slug || "",
                 rule: rule.rule,
               })),
             }),
