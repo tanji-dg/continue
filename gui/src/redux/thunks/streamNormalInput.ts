@@ -266,7 +266,7 @@ export const streamNormalInput = createAsyncThunk<
             }),
             ...(appliedRules.length > 0 && {
               rules: appliedRules.map((rule) => ({
-                id: getRuleId(rule),
+                id: rule.slug || "",
                 rule: rule.rule,
                 slug: rule.slug,
               })),

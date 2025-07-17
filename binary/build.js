@@ -199,11 +199,7 @@ async function buildWithEsbuild() {
   const buildBinaryPromises = [];
   console.log("[info] Building binaries with pkg...");
   for (const target of targets) {
-<<<<<<< HEAD
     buildBinaryPromises.push(bundleBinary(target));
-=======
-    buildBinaryPromises.push(bundleBinary(target));
->>>>>>> 3dfbf2299 (動作するように各種修正)
   }
   await Promise.all(buildBinaryPromises).catch(() => {
     console.error("[error] Failed to build binaries");
