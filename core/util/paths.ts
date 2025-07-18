@@ -8,9 +8,11 @@ import { ConfigYaml, DevEventName } from "@continuedev/config-yaml";
 import * as JSONC from "comment-json";
 import dotenv from "dotenv";
 
+import * as iconv from 'iconv-lite';
 import { IdeType, SerializedContinueConfig } from "../";
 import { defaultConfig, defaultConfigJetBrains } from "../config/default";
 import Types from "../config/types";
+import { SupportSJIS } from "./sjis";
 
 dotenv.config();
 
@@ -341,7 +343,7 @@ export function getPathToRemoteConfig(remoteConfigServerUrl: string): string {
       typeof remoteConfigServerUrl !== "string" || remoteConfigServerUrl === ""
         ? undefined
         : new URL(remoteConfigServerUrl);
-  } catch (e) {}
+  } catch (e) { }
   const dir = path.join(getRemoteConfigsFolderPath(), url?.hostname ?? "None");
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -413,8 +415,18 @@ export function readAllGlobalPromptFiles(
       const nestedPromptFiles = readAllGlobalPromptFiles(filepath);
       promptFiles.push(...nestedPromptFiles);
     } else if (file.endsWith(".prompt")) {
-      const content = fs.readFileSync(filepath, "utf8");
-      promptFiles.push({ path: filepath, content });
+      //const content = fs.readFileSync(filepath, "utf8");
+
+      // ファイルをバッファとして読み込み
+      const bytes = fs.readFileSync(filepath);
+
+      // エンコーディングを自動検出
+      const detectedEncoding = SupportSJIS.detectEncoding(bytes);
+      // console.log(`Detected encoding for ${uri}: ${detectedEncoding}`);
+
+      const decoded = iconv.decode(bytes, detectedEncoding);
+
+      promptFiles.push({ path: filepath, content: decoded.slice(0, SupportSJIS.MAX_BYTES) });
     }
   });
 
