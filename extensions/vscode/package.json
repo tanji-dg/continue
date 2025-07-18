@@ -470,19 +470,19 @@
         {
           "command": "continue.focusContinueInput"
         },
-      {
+        {
           "command": "continue.focusContinueInputWithoutClear"
         },
-      {
+        {
           "command": "continue.debugTerminal"
         },
-      {
+        {
           "command": "continue.toggleFullScreen"
         },
-      {
+        {
           "command": "continue.newSession"
         },
-      {
+        {
           "command": "continue.enterEnterpriseLicenseKey"
         },
         {
@@ -508,32 +508,32 @@
           "group": "Continue",
           "when": "editorHasSelection"
         },
-      {
+        {
           "command": "continue.focusEdit",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.writeCommentsForCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.writeDocstringForCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.fixCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.optimizeCode",
           "group": "Continue",
           "when": "editorHasSelection && !editorReadonly"
         },
-      {
+        {
           "command": "continue.fixGrammar",
           "group": "Continue",
           "when": "editorHasSelection && editorLangId == 'markdown' && !editorReadonly"
@@ -551,22 +551,22 @@
           "group": "navigation@1",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.viewHistory",
           "group": "navigation@2",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.toggleFullScreen",
           "group": "navigation@3",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.openConfigPage",
           "group": "navigation@4",
           "when": "view == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.clearConsole",
           "group": "navigation@1",
           "when": "view == continue.continueConsoleView"
@@ -578,7 +578,7 @@
           "group": "navigation@1",
           "when": "activeWebviewPanelId == continue.continueGUIView"
         },
-      {
+        {
           "command": "continue.viewHistory",
           "group": "navigation@2",
           "when": "activeWebviewPanelId == continue.continueGUIView"
@@ -724,9 +724,9 @@
     "@continuedev/fetch": "^1.0.10",
     "@electron/rebuild": "^3.2.10",
     "@reduxjs/toolkit": "^1.9.3",
-    "@vscode/ripgrep": "^1.15.11",
     "@types/node-fetch": "^2.6.12",
     "@types/uuid": "^10.0.0",
+    "@vscode/ripgrep": "^1.15.11",
     "@vscode/test-electron": "^2.3.9",
     "axios": "^1.2.5",
     "core": "file:../../core",
