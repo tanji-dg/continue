@@ -3,6 +3,8 @@ import { exec } from "node:child_process";
 
 import { Range } from "core";
 import { EXTENSION_NAME } from "core/control-plane/env";
+import { SupportSJIS } from "core/util/sjis";
+import * as iconv from 'iconv-lite';
 import * as URI from "uri-js";
 import * as vscode from "vscode";
 
@@ -15,9 +17,6 @@ import { SecretStorage } from "./stubs/SecretStorage";
 import { VsCodeIdeUtils } from "./util/ideUtils";
 import { getExtensionUri, openEditorAndRevealRange } from "./util/vscode";
 import { VsCodeWebviewProtocol } from "./webviewProtocol";
-
-import * as Encoding from "encoding-japanese";
-import * as iconv from 'iconv-lite';
 
 import type {
   FileStatsMap,
@@ -38,9 +37,6 @@ import { getExtensionVersion, isExtensionPrerelease } from "./util/util";
 class VsCodeIde implements IDE {
   ideUtils: VsCodeIdeUtils;
   secretStorage: SecretStorage;
-
-  // デフォルトのフォールバックエンコーディング
-  private fallbackEncoding: string = "utf-8";
 
   constructor(
     private readonly vscodeWebviewProtocolPromise: Promise<VsCodeWebviewProtocol>,
@@ -299,7 +295,7 @@ class VsCodeIde implements IDE {
       new vscode.Position(startLine, 0),
       new vscode.Position(endLine, 0),
     );
-    openEditorAndRevealRange(vscode.Uri.parse(fileUri), range).then(
+    await openEditorAndRevealRange(vscode.Uri.parse(fileUri), range).then(
       (editor) => {
         // Select the lines
         editor.selection = new vscode.Selection(
@@ -336,79 +332,6 @@ class VsCodeIde implements IDE {
     await this.ideUtils.saveFile(vscode.Uri.parse(fileUri));
   }
 
-  private static MAX_BYTES = 100000;
-
-  // エンコーディング検出のために使用するサンプルサイズ
-  static DETECTION_SAMPLE_SIZE = 4096; // 4KB
-
-  /**
-   * バッファからエンコーディングを検出する
-   */
-  private detectEncoding(buffer: Buffer): string {
-    // BOMがある場合はそれを優先
-    if (
-      buffer.length >= 3 &&
-      buffer[0] === 0xef &&
-      buffer[1] === 0xbb &&
-      buffer[2] === 0xbf
-    ) {
-      return "utf-8"; // UTF-8 with BOM
-    }
-    if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe) {
-      return "utf-16le"; // UTF-16 LE
-    }
-    if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
-      return "utf-16be"; // UTF-16 BE
-    }
-
-    // BOMがなければjschardetで検出
-    // パフォーマンスのため、先頭の一部だけを使用
-    const sample = buffer.slice(
-      0,
-      Math.min(buffer.length, VsCodeIde.DETECTION_SAMPLE_SIZE),
-    );
-    const detected = Encoding.detect(sample);
-
-    // 検出結果をiconv-liteが理解できる形式に変換
-    const detectedEncoding = this.normalizeEncodingName(detected);
-
-    // 検出の信頼度が低い場合はフォールバック
-    if (!detectedEncoding) {
-      return this.fallbackEncoding;
-    }
-
-    return detectedEncoding;
-  }
-
-  /**
-   * エンコーディング名を正規化
-   */
-  private normalizeEncodingName(encoding: string | null | undefined): string {
-    if (!encoding) return this.fallbackEncoding;
-
-    // 小文字に変換して余分な文字を削除
-    const normalized = encoding.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-    // エンコーディング名の変換マップ
-    const encodingMap: Record<string, string> = {
-      shiftjis: "shift_jis",
-      sjis: "shift_jis",
-      ms932: "shift_jis",
-      xsjis: "shift_jis",
-      windows31j: "shift_jis",
-      cp932: "shift_jis",
-      eucjp: "euc-jp",
-      xeucjp: "euc-jp",
-      iso2022jp: "iso-2022-jp",
-      utf8: "utf-8",
-      utf16le: "utf-16le",
-      utf16be: "utf-16be",
-      ascii: "ascii",
-    };
-
-    return encodingMap[normalized] || encoding;
-  }
-
   async readFile(fileUri: string): Promise<string> {
     try {
       const uri = vscode.Uri.parse(fileUri);
@@ -438,7 +361,7 @@ class VsCodeIde implements IDE {
       }
 
       const fileStats = await this.ideUtils.stat(uri);
-      if (fileStats === null || fileStats.size > 10 * VsCodeIde.MAX_BYTES) {
+      if (fileStats === null || fileStats.size > 10 * SupportSJIS.MAX_BYTES) {
         return "";
       }
 
@@ -451,13 +374,13 @@ class VsCodeIde implements IDE {
       const buffer = Buffer.from(bytes);
 
       // エンコーディングを自動検出
-      const detectedEncoding = this.detectEncoding(buffer);
+      const detectedEncoding = SupportSJIS.detectEncoding(buffer);
       // console.log(`Detected encoding for ${uri}: ${detectedEncoding}`);
 
       const decoded = iconv.decode(buffer, detectedEncoding);
 
       // Truncate the buffer to the first MAX_BYTES
-      return decoded.slice(0, VsCodeIde.MAX_BYTES);
+      return decoded.slice(0, SupportSJIS.MAX_BYTES);
     } catch (e) {
       return "";
     }
@@ -558,7 +481,6 @@ class VsCodeIde implements IDE {
         // VSCode does not support negations
 
         patterns
-          // Handle prefix
           .map((pattern) => {
             const normalizedPattern = pattern.replace(/\\/g, "/");
 
@@ -571,12 +493,10 @@ class VsCodeIde implements IDE {
             } else {
               if (fileDir) {
                 return `${fileDir}/${normalizedPattern}`;
-              } else {
-                return `**/${normalizedPattern}`;
               }
+              return `**/${normalizedPattern}`;
             }
           })
-          // Handle suffix
           .map((pattern) => {
             return pattern.endsWith("/") ? `${pattern}**/*` : pattern;
           })
@@ -593,32 +513,30 @@ class VsCodeIde implements IDE {
         maxResults,
       );
       return results.map((result) => vscode.workspace.asRelativePath(result));
-    } else {
-      const results: string[] = [];
-      for (const dir of await this.getWorkspaceDirs()) {
-        const dirResults = await this.runRipgrepQuery(dir, [
-          "--files",
-          "--iglob",
-          pattern,
-          "--ignore-file",
-          ".continueignore",
-          "--ignore-file",
-          ".gitignore",
-          ...(maxResults ? ["--max-count", String(maxResults)] : []),
-        ]);
-
-        results.push(dirResults);
-      }
-
-      const allResults = results.join("\n").split("\n");
-      if (maxResults) {
-        // In the case of multiple workspaces, maxResults will be applied to each workspace
-        // And then the combined results will also be truncated
-        return allResults.slice(0, maxResults);
-      } else {
-        return allResults;
-      }
     }
+    const results: string[] = [];
+    for (const dir of await this.getWorkspaceDirs()) {
+      const dirResults = await this.runRipgrepQuery(dir, [
+        "--files",
+        "--iglob",
+        pattern,
+        "--ignore-file",
+        ".continueignore",
+        "--ignore-file",
+        ".gitignore",
+        ...(maxResults ? ["--max-count", String(maxResults)] : []),
+      ]);
+
+      results.push(dirResults);
+    }
+
+    const allResults = results.join("\n").split("\n");
+    if (maxResults) {
+      // In the case of multiple workspaces, maxResults will be applied to each workspace
+      // And then the combined results will also be truncated
+      return allResults.slice(0, maxResults);
+    }
+    return allResults;
   }
 
   async getSearchResults(query: string, maxResults?: number): Promise<string> {
@@ -653,12 +571,10 @@ class VsCodeIde implements IDE {
       const matches = Array.from(allResults.matchAll(/(\n--|\n\.\/)/g));
       if (matches.length > maxResults) {
         return allResults.substring(0, matches[maxResults].index);
-      } else {
-        return allResults;
       }
-    } else {
       return allResults;
     }
+    return allResults;
   }
 
   async getProblems(fileUri?: string | undefined): Promise<Problem[]> {

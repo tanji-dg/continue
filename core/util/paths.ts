@@ -8,9 +8,11 @@ import { ConfigYaml, DevEventName } from "@continuedev/config-yaml";
 import * as JSONC from "comment-json";
 import dotenv from "dotenv";
 
+import * as iconv from 'iconv-lite';
 import { IdeType, SerializedContinueConfig } from "../";
 import { defaultConfig, defaultConfigJetBrains } from "../config/default";
 import Types from "../config/types";
+import { SupportSJIS } from "./sjis";
 
 dotenv.config();
 
@@ -25,7 +27,7 @@ const CONTINUE_GLOBAL_DIR = (() => {
   return path.join(os.homedir(), ".continue");
 })();
 
-// export const DEFAULT_CONFIG_TS_CONTENTS = `import { Config } from "./types"\n\nexport function modifyConfig(config: Config): Config {
+// export const DEFAULT_CONFIG_TS_CONTENTS = `import { Config } from ".//types"\n\nexport function modifyConfig(config: Config): Config {
 //   return config;
 // }`;
 
@@ -341,7 +343,7 @@ export function getPathToRemoteConfig(remoteConfigServerUrl: string): string {
       typeof remoteConfigServerUrl !== "string" || remoteConfigServerUrl === ""
         ? undefined
         : new URL(remoteConfigServerUrl);
-  } catch (e) {}
+  } catch (e) { }
   const dir = path.join(getRemoteConfigsFolderPath(), url?.hostname ?? "None");
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -413,7 +415,15 @@ export function readAllGlobalPromptFiles(
       const nestedPromptFiles = readAllGlobalPromptFiles(filepath);
       promptFiles.push(...nestedPromptFiles);
     } else if (file.endsWith(".prompt")) {
-      promptFiles.push(filepath);
+      // ファイルをバッファとして読み込み
+      const bytes = fs.readFileSync(filepath);
+
+      // エンコーディングを自動検出
+      const detectedEncoding = SupportSJIS.detectEncoding(bytes);
+
+      const decoded = iconv.decode(bytes, detectedEncoding);
+
+      promptFiles.push(decoded);
     }
   });
 
