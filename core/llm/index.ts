@@ -938,7 +938,7 @@ export abstract class BaseLLM implements ILLM {
     return compileChatMessages({
       modelName: completionOptions.model,
       msgs: message,
-      contextLength: this.contextLength,
+      knownContextLength: this.contextLength,
       maxTokens: completionOptions.maxTokens ?? DEFAULT_MAX_TOKENS,
       supportsImages: this.supportsImages(),
       tools: options.tools,
@@ -987,7 +987,7 @@ export abstract class BaseLLM implements ILLM {
       const { compiledChatMessages } = compileChatMessages({
         modelName: completionOptions.model,
         msgs: _messages,
-        contextLength: this.contextLength,
+        knownContextLength: this.contextLength,
         maxTokens: completionOptions.maxTokens ?? DEFAULT_MAX_TOKENS,
         supportsImages: this.supportsImages(),
         tools: options.tools,

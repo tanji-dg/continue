@@ -16,6 +16,7 @@
     "jsx": "react-jsx",
     "noEmitOnError": false,
     "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types", "./types"],
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true
