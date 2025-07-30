@@ -76,7 +76,12 @@ void (async () => {
   writeBuildTimestamp();
 
   if (!skipInstalls) {
+    const installStart = Date.now();
+    console.log(`[timer] Starting npm installs at ${new Date().toISOString()}`);
     await Promise.all([generateAndCopyConfigYamlSchema(), npmInstall()]);
+    console.log(
+      `[timer] npm installs completed in ${Date.now() - installStart}ms`,
+    );
   }
 
   process.chdir(path.join(continueDir, "gui"));
@@ -135,11 +140,6 @@ void (async () => {
 
   // Then copy over the dist folder to the VSCode extension //
   const vscodeGuiPath = path.join("../extensions/vscode/gui");
-  // 完全にクリーンな状態からスタート
-  if (fs.existsSync(vscodeGuiPath)) {
-    rimrafSync(vscodeGuiPath); // 完全削除
-  }
-  // Then copy over the dist folder to the VSCode extension //
   fs.mkdirSync(vscodeGuiPath, { recursive: true });
   const vscodeCopyStart = Date.now();
   console.log(`[timer] Starting VSCode copy at ${new Date().toISOString()}`);
@@ -450,67 +450,6 @@ void (async () => {
     // SQLite3 Node native module
     "out/build/Release/node_sqlite3.node",
 
-<<<<<<< HEAD
-  console.log(`[info] ターゲットプラットフォーム: ${target}`);
-  console.log(`[info] 現在のプラットフォーム固有のファイル検証: ${platformSpecificFiles.length}個`);
-  
-  // ビルド環境に存在し得る基本ファイルの検証
-  try {
-    validateFilesPresent(commonFiles);
-    console.log("[info] 共通ファイルの検証が完了しました");
-  } catch (e) {
-    console.error("[error] 共通ファイルの検証中にエラーが発生しました:", e.message);
-    process.exit(1);
-  }
-  
-  // プラットフォーム固有のファイルの処理
-  if (platformSpecificFiles.length > 0) {
-    try {
-      // クロスプラットフォームビルドの場合やpackage-allコマンドの場合は検証をスキップ
-      if (isCrossPlatform) {
-        console.log(`[info] クロスプラットフォームビルド: ファイル検証をスキップします`);
-      } 
-      // 同一プラットフォーム向けのビルドの場合は通常検証を実行
-      else if (isNativeBuild) {
-        validateFilesPresent(platformSpecificFiles);
-        console.log("[info] プラットフォーム固有のファイルの検証が完了しました");
-      } 
-      // 異なるプラットフォームの場合は存在するファイルのみ検証
-      else {
-<<<<<<< HEAD
-        console.log(`[info] 異なるプラットフォーム向けビルд
-=======
-        console.log(`[info] 異なるプラットフォーム向けビルд: ${target} (現在の環境: ${currentPlatform})`);
-        const existingFiles = platformSpecificFiles.filter(file => fs.existsSync(file));
-        
-        if (existingFiles.length > 0) {
-          console.log(`[info] 存在する ${existingFiles.length}/${platformSpecificFiles.length} ファイルを検証します`);
-          try {
-            validateFilesPresent(existingFiles);
-            console.log("[info] 既存ファイルの検証が完了しました");
-          } catch (err) {
-            console.warn(`[warn] 既存ファイル検証中に問題が発生: ${err.message}`);
-          }
-        } else {
-          console.log("[info] 検証対象の既存ファイルがありませんでした");
-        }
-      }
-    } catch (e) {
-      // パッケージ作成を続行するために警告のみ表示
-      if (isCrossPlatform) {
-        console.warn("[warn] クロスプラットフォームビルド中の警告:", e.message);
-        console.warn("[warn] この警告は無視され、ビルドを継続します");
-      } else {
-        console.error("[error] ファイル検証エラー:", e.message);
-        if (!isNativeBuild) {
-          console.warn("[warn] 異なるプラットフォーム向けビルドのため、エラーを無視して継続します");
-        } else {
-          throw e; // ネイティブビルドの場合はエラーを再スロー
-        }
-      }
-    }
-  }
-=======
     // out/node_modules (to be accessed by extension.js)
     `out/node_modules/@vscode/ripgrep/bin/rg${exe}`,
     `out/node_modules/@esbuild/${
@@ -523,8 +462,9 @@ void (async () => {
     `out/node_modules/@lancedb/vectordb-${target}${isWinTarget ? "-msvc" : ""}${isLinuxTarget ? "-gnu" : ""}/index.node`,
     `out/node_modules/esbuild/lib/main.js`,
   ]);
->>>>>>> 0e688e8fe (prepackage.jsの修正とrebase対応)
 
+  console.log(
+    `[timer] Prepackage completed in ${Date.now() - startTime}ms - finished at ${new Date().toISOString()}`,
+  );
   process.exit(0);
 })();
->>>>>>> 5ba0de077 (動作するように各種修正)

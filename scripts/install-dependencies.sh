@@ -30,17 +30,8 @@ fi
 echo "Installing root-level dependencies..."
 npm install
 
-echo "Building openai-adapters..."
-pushd packages/openai-adapters
-npm install
-npm run build
-popd
-
-echo "Building config-yaml..."
-pushd packages/config-yaml
-npm install
-npm run build
-popd
+echo "Building packages (fetch, openai-adapters, config-yaml)..."
+node ./scripts/build-packages.js
 
 echo "Installing Core extension dependencies..."
 pushd core
