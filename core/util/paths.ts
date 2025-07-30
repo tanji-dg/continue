@@ -8,9 +8,11 @@ import { ConfigYaml, DevEventName } from "@continuedev/config-yaml";
 import * as JSONC from "comment-json";
 import dotenv from "dotenv";
 
+import * as iconv from 'iconv-lite';
 import { IdeType, SerializedContinueConfig } from "../";
 import { defaultConfig, defaultConfigJetBrains } from "../config/default";
 import Types from "../config/types";
+import { SupportSJIS } from "./sjis";
 
 dotenv.config();
 
@@ -399,12 +401,12 @@ export function getGlobalAssistantsPath(): string {
 
 export function readAllGlobalPromptFiles(
   folderPath: string = getGlobalPromptsPath(),
-): string[] {
+): { path: string; content: string }[] {
   if (!fs.existsSync(folderPath)) {
     return [];
   }
   const files = fs.readdirSync(folderPath);
-  const promptFiles: string[] = [];
+  const promptFiles: { path: string; content: string }[] = [];
   files.forEach((file) => {
     const filepath = path.join(folderPath, file);
     const stats = fs.statSync(filepath);
@@ -413,7 +415,18 @@ export function readAllGlobalPromptFiles(
       const nestedPromptFiles = readAllGlobalPromptFiles(filepath);
       promptFiles.push(...nestedPromptFiles);
     } else if (file.endsWith(".prompt")) {
-      promptFiles.push(filepath);
+      //const content = fs.readFileSync(filepath, "utf8");
+
+      // ファイルをバッファとして読み込み
+      const bytes = fs.readFileSync(filepath);
+
+      // エンコーディングを自動検出
+      const detectedEncoding = SupportSJIS.detectEncoding(bytes);
+      // console.log(`Detected encoding for ${uri}: ${detectedEncoding}`);
+
+      const decoded = iconv.decode(bytes, detectedEncoding);
+
+      promptFiles.push({ path: filepath, content: decoded.slice(0, SupportSJIS.MAX_BYTES) });
     }
   });
 
