@@ -351,6 +351,16 @@
         "title": "Continue: Force Next Edit"
       },
       {
+        "command": "continue.acceptJump",
+        "category": "Continue",
+        "title": "Continue: Accept Jump Suggestion"
+      },
+      {
+        "command": "continue.rejectJump",
+        "category": "Continue",
+        "title": "Continue: Reject Jump Suggestion"
+      },
+      {
         "command": "continue.generateRule",
         "category": "Continue",
         "title": "Generate Rule",
@@ -451,12 +461,22 @@
       {
         "command": "continue.nextEditWindow.hideNextEditSuggestion",
         "key": "escape",
-        "when": "editorTextFocus && nextEditWindowActive"
+        "when": "editorTextFocus && nextEditWindowActive && !continue.jumpDecorationVisible"
       },
       {
         "command": "continue.nextEditWindow.acceptNextEditSuggestion",
         "key": "tab",
-        "when": "editorTextFocus && nextEditWindowActive"
+        "when": "editorTextFocus && nextEditWindowActive && !continue.jumpDecorationVisible"
+      },
+      {
+        "command": "continue.acceptJump",
+        "key": "tab",
+        "when": "editorTextFocus && continue.jumpDecorationVisible"
+      },
+      {
+        "command": "continue.rejectJump",
+        "key": "escape",
+        "when": "editorTextFocus && continue.jumpDecorationVisible"
       }
     ],
     "submenus": [
@@ -684,9 +704,7 @@
     "e2e:quick": "npm run e2e:compile && CONTINUE_GLOBAL_DIR=e2e/test-continue npm run e2e:test && npm run e2e:clean",
     "e2e:ci:download": "npm run e2e:create-storage && npm run e2e:get-chromedriver && npm run e2e:get-vscode",
     "e2e:ci:run": "npm run e2e:compile && npm run e2e:copy-vsix && npm run e2e:install-vsix && npm run e2e:install-extensions && CONTINUE_GLOBAL_DIR=e2e/test-continue npm run e2e:test",
-    "e2e:ci:run-yaml": "npm run e2e:compile && npm run e2e:copy-vsix && npm run e2e:install-vsix && npm run e2e:install-extensions && CONTINUE_GLOBAL_DIR=e2e/test-continue-yaml npm run e2e:test",
-    "tsc:check:prod": "tsc -p ./tsconfig.prod.json --noEmit",
-    "build:prod": "npm run tsc:check:prod && npm run esbuild-base -- --minify"
+    "e2e:ci:run-yaml": "npm run e2e:compile && npm run e2e:copy-vsix && npm run e2e:install-vsix && npm run e2e:install-extensions && CONTINUE_GLOBAL_DIR=e2e/test-continue-yaml npm run e2e:test"
   },
   "devDependencies": {
     "@biomejs/biome": "1.6.4",
@@ -696,7 +714,6 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/follow-redirects": "^1.14.4",
-    "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "16.x",
     "@types/node-fetch": "^2.6.12",
@@ -713,7 +730,6 @@
     "esbuild-visualizer": "^0.6.0",
     "eslint": "^8.28.0",
     "json-schema-to-typescript": "^12.0.0",
-    "mocha": "^10.4.0",
     "ovsx": "^0.8.3",
     "rimraf": "^5.0.5",
     "typescript": "^5.6.3",
@@ -725,10 +741,7 @@
     "@continuedev/fetch": "file:../../packages/fetch",
     "@electron/rebuild": "^3.2.10",
     "@reduxjs/toolkit": "^1.9.3",
-    "@types/node-fetch": "^2.6.12",
-    "@types/uuid": "^10.0.0",
-    "@vscode/ripgrep": "^1.15.11",
-    "@vscode/test-electron": "^2.3.9",
+    "@vscode/ripgrep": "^1.15.9",
     "axios": "^1.2.5",
     "core": "file:../../core",
     "cors": "^2.8.5",
