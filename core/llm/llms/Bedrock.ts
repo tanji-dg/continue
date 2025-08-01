@@ -493,7 +493,7 @@ class Bedrock extends BaseLLM {
               }
             }
           }
-        } else if (message.role === "thinking") {
+        } else if (!BaseLLM.isDeepSeekModel(this.model) && message.role === "thinking") {
           // THINKING:
           // Thinking messages are represented by "reasoningContent" blocks which can have redacted content or reasoning content
           if (message.redactedThinking) {
