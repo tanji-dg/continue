@@ -343,7 +343,7 @@ export function getPathToRemoteConfig(remoteConfigServerUrl: string): string {
       typeof remoteConfigServerUrl !== "string" || remoteConfigServerUrl === ""
         ? undefined
         : new URL(remoteConfigServerUrl);
-  } catch (e) { }
+  } catch (e) {}
   const dir = path.join(getRemoteConfigsFolderPath(), url?.hostname ?? "None");
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);

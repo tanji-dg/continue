@@ -325,6 +325,10 @@ export const getApplicableRules = (
   return applicableRules;
 };
 
+ export function getRuleId(rule: RuleWithSource): string {
+  return rule.slug ?? rule.ruleFile ?? rule.name ?? rule.source;
+}
+
 export const getSystemMessage = ({
   baseSystemMessage,
   systemMessages,

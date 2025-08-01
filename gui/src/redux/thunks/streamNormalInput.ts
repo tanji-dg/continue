@@ -1,5 +1,6 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
 import { LLMFullCompletionOptions, ModelDescription, TextMessagePart, Tool } from "core";
+import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import { selectActiveTools } from "../selectors/selectActiveTools";
@@ -20,6 +21,7 @@ import {
 import { AppThunkDispatch, RootState, ThunkApiType } from "../store";
 import { constructMessages } from "../util/constructMessages";
 
+import { getSystemMessage } from "core/llm/rules/getSystemMessageWithRules";
 import { modelSupportsNativeTools } from "core/llm/toolSupport";
 import { addSystemMessageToolsToSystemMessage } from "core/tools/systemMessageTools/buildToolsSystemMessage";
 import { interceptSystemToolCalls } from "core/tools/systemMessageTools/interceptSystemToolCalls";
@@ -181,7 +183,7 @@ export const streamNormalInput = createAsyncThunk<
 
     const { messages, appliedRules, appliedRuleIndex } = constructMessages(
       withoutMessageIds,
-      systemMessage,
+      getSystemMessage({ baseSystemMessage: systemMessage, systemMessages: systemMessages }),
       state.config.config.rules,
       state.ui.ruleSettings,
       !useNativeTools,
@@ -265,7 +267,7 @@ export const streamNormalInput = createAsyncThunk<
             }),
             ...(appliedRules.length > 0 && {
               rules: appliedRules.map((rule) => ({
-                id: rule.slug || "",
+                id: getRuleId(rule),
                 rule: rule.rule,
                 slug: rule.slug,
               })),

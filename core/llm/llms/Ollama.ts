@@ -184,7 +184,8 @@ class Ollama extends BaseLLM implements ModelInstaller {
             let value = parts[2];
             switch (key) {
               case "num_ctx":
-                this.contextLength = options.contextLength ?? Number.parseInt(value);
+                this._contextLength =
+                  options.contextLength ?? Number.parseInt(value);
                 break;
               case "stop":
                 if (!this.completionOptions.stop) {

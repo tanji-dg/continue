@@ -1,6 +1,3 @@
-Looking at the requested edit, I need to add the line `!models/all-MiniLM-L6-v2/**` after the `models/**` line. This creates an exception to include the `all-MiniLM-L6-v2` directory within the models folder that would otherwise be ignored.
-
-```vscodeignore
 .vscode/**
 .vscode-test/**
 build/**
@@ -24,10 +21,7 @@ esbuild.js
 importMetaUrl.js
 scripts
 e2e
-models/**
-!models/all-MiniLM-L6-v2/**
 
 server/exe/**
 !out/node_modules/**
 !node_modules/@vscode/ripgrep/bin/rg
-```

@@ -11,6 +11,7 @@ import * as vscode from "vscode";
 import {
   executeGotoProvider,
   executeSignatureHelpProvider,
+  executeSymbolProvider,
 } from "./autocomplete/lsp";
 import { Repository } from "./otherExtensions/git";
 import { SecretStorage } from "./stubs/SecretStorage";
@@ -19,6 +20,7 @@ import { getExtensionUri, openEditorAndRevealRange } from "./util/vscode";
 import { VsCodeWebviewProtocol } from "./webviewProtocol";
 
 import type {
+  DocumentSymbol,
   FileStatsMap,
   FileType,
   IDE,
@@ -109,6 +111,28 @@ class VsCodeIde implements IDE {
       line: location.position.line,
       character: location.position.character,
       name: "vscode.executeSignatureHelpProvider",
+    });
+
+    return result;
+  }
+
+  async getReferences(location: Location): Promise<RangeInFile[]> {
+    const result = await executeGotoProvider({
+      uri: vscode.Uri.parse(location.filepath),
+      line: location.position.line,
+      character: location.position.character,
+      name: "vscode.executeReferenceProvider",
+    });
+
+    return result;
+  }
+
+  async getDocumentSymbols(
+    textDocumentIdentifier: string, // uri
+  ): Promise<DocumentSymbol[]> {
+    const result = await executeSymbolProvider({
+      uri: vscode.Uri.parse(textDocumentIdentifier),
+      name: "vscode.executeDocumentSymbolProvider",
     });
 
     return result;
@@ -295,7 +319,7 @@ class VsCodeIde implements IDE {
       new vscode.Position(startLine, 0),
       new vscode.Position(endLine, 0),
     );
-    await openEditorAndRevealRange(vscode.Uri.parse(fileUri), range).then(
+    openEditorAndRevealRange(vscode.Uri.parse(fileUri), range).then(
       (editor) => {
         // Select the lines
         editor.selection = new vscode.Selection(
@@ -331,6 +355,8 @@ class VsCodeIde implements IDE {
   async saveFile(fileUri: string): Promise<void> {
     await this.ideUtils.saveFile(vscode.Uri.parse(fileUri));
   }
+
+  private static MAX_BYTES = 100000;
 
   async readFile(fileUri: string): Promise<string> {
     try {
@@ -481,6 +507,7 @@ class VsCodeIde implements IDE {
         // VSCode does not support negations
 
         patterns
+          // Handle prefix
           .map((pattern) => {
             const normalizedPattern = pattern.replace(/\\/g, "/");
 
@@ -493,10 +520,12 @@ class VsCodeIde implements IDE {
             } else {
               if (fileDir) {
                 return `${fileDir}/${normalizedPattern}`;
+              } else {
+                return `**/${normalizedPattern}`;
               }
-              return `**/${normalizedPattern}`;
             }
           })
+          // Handle suffix
           .map((pattern) => {
             return pattern.endsWith("/") ? `${pattern}**/*` : pattern;
           })
@@ -513,7 +542,7 @@ class VsCodeIde implements IDE {
         maxResults,
       );
       return results.map((result) => vscode.workspace.asRelativePath(result));
-    }
+    } else {
     const results: string[] = [];
     for (const dir of await this.getWorkspaceDirs()) {
       const dirResults = await this.runRipgrepQuery(dir, [
@@ -535,8 +564,10 @@ class VsCodeIde implements IDE {
       // In the case of multiple workspaces, maxResults will be applied to each workspace
       // And then the combined results will also be truncated
       return allResults.slice(0, maxResults);
+      } else {
+        return allResults;
+      }
     }
-    return allResults;
   }
 
   async getSearchResults(query: string, maxResults?: number): Promise<string> {
@@ -571,10 +602,12 @@ class VsCodeIde implements IDE {
       const matches = Array.from(allResults.matchAll(/(\n--|\n\.\/)/g));
       if (matches.length > maxResults) {
         return allResults.substring(0, matches[maxResults].index);
+      } else {
+        return allResults;
       }
+    } else {
       return allResults;
     }
-    return allResults;
   }
 
   async getProblems(fileUri?: string | undefined): Promise<Problem[]> {
