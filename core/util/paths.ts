@@ -401,12 +401,12 @@ export function getGlobalAssistantsPath(): string {
 
 export function readAllGlobalPromptFiles(
   folderPath: string = getGlobalPromptsPath(),
-): string[] {
+): Array<{ path: string; content: string }> { // プロパティ順序を変更
   if (!fs.existsSync(folderPath)) {
     return [];
   }
   const files = fs.readdirSync(folderPath);
-  const promptFiles: string[] = [];
+  const promptFiles: Array<{ path: string; content: string }> = []; // 型注釈の順序も変更
   files.forEach((file) => {
     const filepath = path.join(folderPath, file);
     const stats = fs.statSync(filepath);
@@ -415,15 +415,14 @@ export function readAllGlobalPromptFiles(
       const nestedPromptFiles = readAllGlobalPromptFiles(filepath);
       promptFiles.push(...nestedPromptFiles);
     } else if (file.endsWith(".prompt")) {
-      // ファイルをバッファとして読み込み
       const bytes = fs.readFileSync(filepath);
-
-      // エンコーディングを自動検出
       const detectedEncoding = SupportSJIS.detectEncoding(bytes);
-
       const decoded = iconv.decode(bytes, detectedEncoding);
 
-      promptFiles.push(decoded);
+      promptFiles.push({ 
+        path: filepath,  // pathを先に
+        content: decoded // contentを後に
+      });
     }
   });
 

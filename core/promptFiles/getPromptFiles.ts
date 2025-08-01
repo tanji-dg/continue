@@ -132,8 +132,8 @@ export async function getAllPromptFiles(
   ).flat();
 
   // Also read from ~/.continue/.prompts
-  for (const path of readAllGlobalPromptFiles()) {
-    promptFiles.push({ path: path, content: await ide.readFile(path) });
+  for (const t of readAllGlobalPromptFiles()) {
+    promptFiles.push(t);
   }
 
   // Add hardcoded init prompt
