@@ -81,6 +81,7 @@ function setupTest() {
     selectedCode: [],
     content: "Hello, please help me with this code",
     legacyCommandWithInput: undefined,
+    systemMessages: []
   });
 
   // Mock getBaseSystemMessage to return simple system message for readable tests
