@@ -86,6 +86,7 @@ beforeEach(() => {
     selectedCode: [],
     content: "Hello, please help me with this code",
     legacyCommandWithInput: undefined,
+    systemMessages: [],
   });
 
   mockGetBaseSystemMessage.mockReturnValue("You are a helpful assistant.");
