@@ -129,12 +129,27 @@ void (async () => {
 
   // Then copy over the dist folder to the VSCode extension //
   const vscodeGuiPath = path.join("../extensions/vscode/gui");
-  rimrafSync(vscodeGuiPath);
-  fs.mkdirSync(vscodeGuiPath, { recursive: true });
   const vscodeCopyStart = Date.now();
   console.log(`[timer] Starting VSCode copy at ${new Date().toISOString()}`);
+  
+  // Remove existing gui directory and recreate it
+  if (fs.existsSync(vscodeGuiPath)) {
+    rimrafSync(vscodeGuiPath);
+  }
+  fs.mkdirSync(vscodeGuiPath, { recursive: true });
+  
+  // Use ncp with timeout and proper error handling
   await new Promise((resolve, reject) => {
-    ncp("dist", vscodeGuiPath, (error) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('VSCode copy timeout after 30 seconds'));
+    }, 30000);
+    
+    ncp("dist", vscodeGuiPath, { 
+      dereference: true,
+      clobber: true,
+      stopOnErr: true 
+    }, (error) => {
+      clearTimeout(timeout);
       if (error) {
         console.log(
           "Error copying React app build to VSCode extension: ",
