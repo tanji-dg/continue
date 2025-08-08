@@ -1,12 +1,17 @@
 {
-  "scripts": {
+  scripts": {
     "tsc:watch": "concurrently -n gui,vscode,core,binary -c cyan,magenta,yellow,green \"npm run tsc:watch:gui\" \"npm run tsc:watch:vscode\" \"npm run tsc:watch:core\" \"npm run tsc:watch:binary\"",
     "tsc:watch:gui": "tsc --project gui/tsconfig.json --watch --noEmit --pretty",
     "tsc:watch:vscode": "tsc --project extensions/vscode/tsconfig.json --watch --noEmit --pretty",
     "tsc:watch:core": "tsc --project core/tsconfig.json --watch --noEmit --pretty",
     "tsc:watch:binary": "tsc --project binary/tsconfig.json --watch --noEmit --pretty",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore"
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
+    "build:prod": "npm run build:prod:core && npm run build:prod:gui && npm run build:prod:vscode && npm run build:prod:binary",
+    "build:prod:core": "cd core && npm run build:npm",
+    "build:prod:gui": "cd gui && npm run build",
+    "build:prod:vscode": "cd extensions/vscode && npm run build:prod",
+    "build:prod:binary": "cd binary && npm run build:prod"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^7.8.0",
