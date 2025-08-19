@@ -77,15 +77,11 @@ async function installNodeModuleInTempDirAndCopyToCurrent(packageName, toCopy) {
       );
     });
   } finally {
-    // Clean up the temporary directory
-    try {
-      rimrafSync(tempDir);
-    } catch (err) {
-      console.warn("[warn] Failed to remove temp directory", tempDir, err);
-    }
-
-    // Return to the original directory
+    // Return to the original directory first
     process.chdir(currentDir);
+    
+    // Note: Temp directory cleanup is handled by prepackage.js at the end
+    // to avoid race conditions with file copying
   }
 }
 
