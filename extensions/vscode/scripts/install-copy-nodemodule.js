@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ncp = require("ncp").ncp;
+const { rimrafSync } = require("rimraf");
 
 const { execCmdSync } = require("../../../scripts/util");
 
@@ -63,11 +64,11 @@ async function installNodeModuleInTempDirAndCopyToCurrent(packageName, toCopy) {
       );
     });
   } finally {
-    // Clean up the temporary directory
-    // rimrafSync(tempDir);
-
-    // Return to the original directory
+    // Return to the original directory first
     process.chdir(currentDir);
+    
+    // Note: Temp directory cleanup is handled by prepackage.js at the end
+    // to avoid race conditions with file copying
   }
 }
 
