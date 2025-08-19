@@ -98,6 +98,7 @@ function forceCleanup() {
     path.join(__dirname, "..", "out"),
     path.join(__dirname, "..", "node_modules", "@esbuild"),
     path.join(__dirname, "..", "node_modules", "@lancedb"),
+    path.join(__dirname, "..", "node_modules", "@vscode"),
   ];
   
   pathsToClean.forEach(pathToClean => {
@@ -110,6 +111,97 @@ function forceCleanup() {
       }
     }
   });
+}
+
+// プラットフォーム固有の依存関係をインストールする関数
+async function installPlatformDependencies(platform) {
+  try {
+    const [os, arch] = platform.split("-");
+    
+    // 既存のプラットフォーム固有パッケージをクリーンアップ
+    const packagesToClean = [
+      path.join(__dirname, "..", "node_modules", "@esbuild"),
+      path.join(__dirname, "..", "node_modules", "@lancedb"),
+    ];
+    
+    packagesToClean.forEach(pkg => {
+      if (fs.existsSync(pkg)) {
+        rimrafSync(pkg, { force: true });
+        console.log(`[info] Cleaned up ${path.basename(pkg)}`);
+      }
+    });
+    
+    // @esbuild パッケージのインストール
+    const esbuildPackage = `@esbuild/${platform}`;
+    console.log(`[info] Installing ${esbuildPackage}...`);
+    execSync(`npm install --no-save --force ${esbuildPackage}@0.17.19`, { stdio: "inherit" });
+    
+    // @lancedb パッケージのインストール
+    const suffix = os === "win32" ? "-msvc" : os === "linux" ? "-gnu" : "";
+    const lancedbPackage = `@lancedb/vectordb-${platform}${suffix}`;
+    console.log(`[info] Installing ${lancedbPackage}...`);
+    execSync(`npm install --no-save --force "${lancedbPackage}@>=0.4.0"`, { stdio: "inherit" });
+    
+    // ripgrep用のWindows実行ファイル取得（win32プラットフォームの場合）
+    if (os === "win32") {
+      await downloadRipgrepForWindows();
+      // out/node_modulesにもコピーする
+      await copyRipgrepToOut();
+    }
+    
+  } catch (error) {
+    console.warn(`[warn] プラットフォーム固有依存関係のインストール中にエラーが発生しました: ${error.message}`);
+    // エラーが発生してもビルドを継続
+  }
+}
+
+// Windows用のripgrep実行ファイルをダウンロード
+async function downloadRipgrepForWindows() {
+  console.log("[info] Setting up ripgrep for Windows...");
+  
+  const ripgrepBinDir = path.join(__dirname, "..", "node_modules", "@vscode", "ripgrep", "bin");
+  const rgExePath = path.join(ripgrepBinDir, "rg.exe");
+  const rgPath = path.join(ripgrepBinDir, "rg");
+  
+  // ディレクトリが存在しない場合作成
+  if (!fs.existsSync(ripgrepBinDir)) {
+    fs.mkdirSync(ripgrepBinDir, { recursive: true });
+  }
+  
+  // 既にrg.exeが存在する場合はスキップ
+  if (fs.existsSync(rgExePath)) {
+    console.log(`[info] rg.exe already exists`);
+    return;
+  }
+  
+  // シンプルなフォールバック: 既存のrgをrg.exeとしてコピー
+  if (fs.existsSync(rgPath)) {
+    fs.copyFileSync(rgPath, rgExePath);
+    // 実行可能権を付与（Linux上でのクロスビルドの場合）
+    fs.chmodSync(rgExePath, 0o755);
+    console.log(`[info] Created rg.exe from existing rg binary`);
+  } else {
+    console.error(`[error] Neither rg nor rg.exe found in ${ripgrepBinDir}`);
+  }
+}
+
+// out/node_modulesにもripgrepをコピー
+async function copyRipgrepToOut() {
+  const sourceDir = path.join(__dirname, "..", "node_modules", "@vscode", "ripgrep", "bin");
+  const targetDir = path.join(__dirname, "..", "out", "node_modules", "@vscode", "ripgrep", "bin");
+  
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+  
+  const rgExePath = path.join(sourceDir, "rg.exe");
+  const targetRgExePath = path.join(targetDir, "rg.exe");
+  
+  if (fs.existsSync(rgExePath)) {
+    fs.copyFileSync(rgExePath, targetRgExePath);
+    fs.chmodSync(targetRgExePath, 0o755);
+    console.log(`[info] Copied rg.exe to out/node_modules`);
+  }
 }
 
 (async () => {
@@ -142,6 +234,10 @@ function forceCleanup() {
       : `node scripts/package.js --target ${platform}`;
 
     try {
+      // プラットフォーム固有の依存関係をインストール
+      console.log(`[info] プラットフォーム ${platform} 用の依存関係インストール中...`);
+      await installPlatformDependencies(platform);
+      
       // prepackageとpackageコマンドを実行
       console.log(`[info] プラットフォーム ${platform} 用のprepackage実行中...`);
       execSync(`node scripts/prepackage.js --target ${platform} --cross-platform`, {
