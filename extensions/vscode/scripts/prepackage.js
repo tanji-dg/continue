@@ -566,11 +566,10 @@ void (async () => {
     }
   }
 
-  // Install platform-specific sqlite3 binary if not current platform
-  if (target !== `${process.platform}-${process.arch}`) {
-    console.log(`[info] Installing platform-specific sqlite3 binary for ${target}`);
-    await copySqlite(target);
-  }
+  // Always install platform-specific sqlite3 binary for cross-platform builds
+  const currentPlatform = `${process.platform}-${process.arch}`;
+  console.log(`[info] Installing platform-specific sqlite3 binary for ${target} (current: ${currentPlatform})`);
+  await copySqlite(target);
 
   console.log("[info] Copying sqlite node binding from core");
   await new Promise((resolve, reject) => {
