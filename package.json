@@ -9,7 +9,7 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
     "build:prod": "npm run build:prod:core && npm run build:prod:gui && npm run build:prod:vscode && npm run build:prod:binary",
-    "build:prod:core": "cd core && npm run build:npm",
+    "build:prod:core": "cd core && npm run build",
     "build:prod:gui": "cd gui && npm run build",
     "build:prod:vscode": "cd extensions/vscode && npm run build:prod",
     "build:prod:binary": "cd binary && npm run build:prod"
