@@ -153,6 +153,7 @@ async function handleToolCallExecution(
         dispatch(
           updateToolCallOutput({
             toolCallId: toolCallState.toolCallId,
+<<<<<<< HEAD
             output: [
               {
                 name: "Tool Call Error",
