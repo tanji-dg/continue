@@ -148,7 +148,7 @@ async function handleToolCallExecution(
         dispatch(
           updateToolCallOutput({
             toolCallId: toolCallState.toolCallId,
-            
+            contextItems: [],
           }),
         );
         return false;
