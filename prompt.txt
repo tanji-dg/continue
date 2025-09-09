@@ -1,0 +1,14 @@
+英語で考え、日本語で出力する。
+
+continueの日々更新は次のことを行う。
+
+- git fetch originを実行
+- origin/mainブランチに変更がなければ終了
+- git rebase origin/mainを完遂
+- scripts/install-dependencies.shを完遂
+- cd extensions/vscodeして、次のコマンドを完遂
+  - npm run build:prod
+  - npm run package-all
+
+continueを日々更新せよ。
+
