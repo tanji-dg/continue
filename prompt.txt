@@ -1,4 +1,5 @@
 英語で考え、日本語で出力する。
+思考状況は日本語で出力する。
 
 continueの日々更新は次のことを行う。
 
@@ -9,6 +10,7 @@ continueの日々更新は次のことを行う。
 - cd extensions/vscodeして、次のコマンドを完遂
   - npm run build:prod
   - npm run package-all
+- 新たに生成したパッケージを表示
 
 continueを日々更新せよ。
 
