@@ -5,6 +5,7 @@ continueの日々更新は次のことを行う。
 
 - git fetch originを実行
 - origin/mainブランチに変更がなければ終了
+- dg/rebase/YYMMDDのフォーマットでブランチを作成
 - git rebase origin/mainを完遂
 - scripts/install-dependencies.shを完遂
 - cd extensions/vscodeして、次のコマンドを完遂
