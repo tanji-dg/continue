@@ -12,7 +12,8 @@
     "build:prod:core": "cd core && npm run build",
     "build:prod:gui": "cd gui && npm run build",
     "build:prod:vscode": "cd extensions/vscode && npm run build:prod",
-    "build:prod:binary": "cd binary && npm run build:prod"
+    "build:prod:binary": "cd binary && npm run build:prod",
+    "package-all:vscode": "cd extensions/vscode && npm run package-all"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^7.8.0",

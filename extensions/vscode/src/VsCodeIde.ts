@@ -620,9 +620,8 @@ class VsCodeIde implements IDE {
       if (matches.length > maxResults) {
         return allResults.substring(0, matches[maxResults].index);
       }
-    } else {
-      return allResults;
     }
+    return allResults;
   }
 
   async getProblems(fileUri?: string | undefined): Promise<Problem[]> {
