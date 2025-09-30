@@ -11,5 +11,5 @@
 - cd extensions/vscodeして、次のコマンドを完遂
   - npm run build:prod
   - npm run package-all
-- git push githuじっこう
+- git push github
 - 新たに生成したパッケージを表示
