@@ -1,8 +1,5 @@
 英語で考え、日本語で出力する。
-思考状況は日本語で出力する。
-
-次のタスクを実行
-
+do following tasks.
 - git fetch originを実行
 - origin/mainブランチに変更がなければ終了
 - dg/rebase/YYMMDDのフォーマットでブランチを作成
