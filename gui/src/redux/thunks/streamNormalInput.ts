@@ -41,7 +41,6 @@ import {
 } from "../selectors/selectToolCalls";
 import { getBaseSystemMessage } from "../util/getBaseSystemMessage";
 import { callToolById } from "./callToolById";
-import { enhanceParsedArgs } from "./enhanceParsedArgs";
 import { IIdeMessenger } from "../../context/IdeMessenger";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
 import { evaluateToolPolicies } from "./evaluateToolPolicies";
