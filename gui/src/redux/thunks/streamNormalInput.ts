@@ -40,7 +40,6 @@ import {
 } from "../selectors/selectToolCalls";
 import { getBaseSystemMessage } from "../util/getBaseSystemMessage";
 import { callToolById } from "./callToolById";
-import { enhanceParsedArgs } from "./enhanceParsedArgs";
 import { ToolPolicy } from "@continuedev/terminal-security";
 import { IIdeMessenger } from "../../context/IdeMessenger";
 import { AppThunkDispatch, RootState } from "../store";
