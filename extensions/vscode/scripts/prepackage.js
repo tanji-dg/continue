@@ -4,6 +4,16 @@ const path = require("path");
 const ncp = require("ncp").ncp;
 const { rimrafSync } = require("rimraf");
 
+// サポートされているすべてのプラットフォームのリスト
+const ALL_PLATFORMS = [
+  "win32-x64",
+  "linux-x64",
+  // "darwin-x64",
+  // "darwin-arm64",
+  // "linux-arm64",
+  // "win32-arm64",
+];
+
 const {
   validateFilesPresent,
   execCmdSync,
@@ -311,6 +321,77 @@ function removeDevelopmentFiles() {
     console.log(
       `[info] Removed development files (${(totalRemoved / 1024 / 1024).toFixed(2)} MB)`,
     );
+  }
+}
+
+// Windows用のripgrep実行ファイルをダウンロード
+async function downloadRipgrepForWindows() {
+  console.log("[info] Setting up ripgrep for Windows...");
+
+  const ripgrepBinDir = path.join(
+    __dirname,
+    "..",
+    "node_modules",
+    "@vscode",
+    "ripgrep",
+    "bin",
+  );
+  const rgExePath = path.join(ripgrepBinDir, "rg.exe");
+  const rgPath = path.join(ripgrepBinDir, "rg");
+
+  // ディレクトリが存在しない場合作成
+  if (!fs.existsSync(ripgrepBinDir)) {
+    fs.mkdirSync(ripgrepBinDir, { recursive: true });
+  }
+
+  // 既にrg.exeが存在する場合はスキップ
+  if (fs.existsSync(rgExePath)) {
+    console.log(`[info] rg.exe already exists`);
+    return;
+  }
+
+  // シンプルなフォールバック: 既存のrgをrg.exeとしてコピー
+  if (fs.existsSync(rgPath)) {
+    fs.copyFileSync(rgPath, rgExePath);
+    // 実行可能権を付与（Linux上でのクロスビルドの場合）
+    fs.chmodSync(rgExePath, 0o755);
+    console.log(`[info] Created rg.exe from existing rg binary`);
+  } else {
+    console.error(`[error] Neither rg nor rg.exe found in ${ripgrepBinDir}`);
+  }
+}
+
+// out/node_modulesにもripgrepをコピー
+async function copyRipgrepToOut() {
+  const sourceDir = path.join(
+    __dirname,
+    "..",
+    "node_modules",
+    "@vscode",
+    "ripgrep",
+    "bin",
+  );
+  const targetDir = path.join(
+    __dirname,
+    "..",
+    "out",
+    "node_modules",
+    "@vscode",
+    "ripgrep",
+    "bin",
+  );
+
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  const rgExePath = path.join(sourceDir, "rg.exe");
+  const targetRgExePath = path.join(targetDir, "rg.exe");
+
+  if (fs.existsSync(rgExePath)) {
+    fs.copyFileSync(rgExePath, targetRgExePath);
+    fs.chmodSync(targetRgExePath, 0o755);
+    console.log(`[info] Copied rg.exe to out/node_modules`);
   }
 }
 
@@ -623,6 +704,13 @@ void (async () => {
           `[info] Using existing platform-specific lancedb for ${target}`,
         );
       }
+
+      // ripgrep用のWindows実行ファイル取得（win32プラットフォームの場合）
+      if (isWinTarget) {
+        await downloadRipgrepForWindows();
+        // out/node_modulesにもコピーする
+        await copyRipgrepToOut();
+      }
     }
   }
 
@@ -631,7 +719,15 @@ void (async () => {
   console.log(
     `[info] Installing platform-specific sqlite3 binary for ${target} (current: ${currentPlatform})`,
   );
-  await copySqlite(target);
+  if (target === "all-undefined") {
+    // "all"が渡された場合
+    for (const p of ALL_PLATFORMS) {
+      console.log(`[info] Installing sqlite3 for platform: ${p}`);
+      await copySqlite(p);
+    }
+  } else {
+    await copySqlite(target);
+  }
 
   console.log("[info] Copying sqlite node binding from core");
   await new Promise((resolve, reject) => {
