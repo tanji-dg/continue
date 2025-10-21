@@ -1,0 +1,9 @@
+## Gemini Added Memories
+
+- The `binary/out` directory, where `node_sqlite3.node` is intended to be copied, was being deleted by `scripts/uninstall.js` (likely as part of a pre-debug task). The copy logic in `binary/build.js` was adjusted to ensure `node_sqlite3.node` is copied to `binary/out/build/Release/` after it's extracted and before any subsequent cleanup by `scripts/uninstall.js` (if it runs).
+- When performing `git rebase`, especially in a monorepo with `package-lock.json` files, it's often more efficient to skip `package-lock.json` conflicts during the rebase process using `git rebase --skip` and then run `npm install` once at the very end of the rebase to resolve all `package-lock.json` conflicts simultaneously.
+- When performing `git rebase`, it's often useful to set `GIT_EDITOR=true` to prevent Git from launching an interactive editor for commit messages, especially when automating rebase steps or when commit messages do not need to be modified.
+- When performing `git rebase --continue`, environment variables should also be set, e.g., `GIT_EDITOR=true git rebase --continue`.
+- Resolved various build issues in the Continue monorepo: 1. Fixed merge conflicts in TypeScript files. 2. Addressed TypeScript type errors (missing modules, implicit any, missing properties) by adding dependencies (kuromoji, @types/kuromoji), explicitly typing parameters, and using existing properties (rule.slug) or providing default values. 3. Corrected ReferenceError in prepackage.js by defining missing platform-specific variables (isMacTarget, isLinuxTarget, isWinTarget). 4. Fixed LanceDB native binary copy issue by adjusting the 'toCopy' argument in prepackage.js's installAndCopyNodeModules calls to correctly reflect the package structure in node_modules.
+- When performing `git rebase --continue`, environment variables should also be set, e.g., `GIT_EDITOR=true git rebase --continue`.
+- When running `git rebase`, always set `GIT_EDITOR=true`.
