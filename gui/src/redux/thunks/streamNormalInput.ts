@@ -23,7 +23,6 @@ import {
   setToolGenerated,
   streamUpdate,
   updateToolCallOutput,
-  errorToolCall,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { constructMessages } from "../util/constructMessages";
