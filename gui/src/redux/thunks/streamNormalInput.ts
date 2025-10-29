@@ -5,9 +5,8 @@ import {
   Tool,
   ToolCallState,
   TextMessagePart,
-  ToolPolicy,
-  DEFAULT_TOOL_SETTING,
 } from "core";
+import { ToolPolicy } from "@continuedev/terminal-security";
 import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { BUILT_IN_GROUP_NAME } from "core/tools/builtIn";
@@ -198,16 +197,13 @@ export const streamNormalInput = createAsyncThunk<
     const start = Date.now();
     const streamAborter = state.session.streamAborter;
     try {
-      let gen = extra.ideMessenger.llmStreamChat(
-        {
-          completionOptions,
-          title: selectedChatModel.title,
-          messages: compiledChatMessages,
-          legacySlashCommandData,
-          messageOptions: { precompiled: true },
-        },
-        streamAborter.signal,
-      );
+      let gen = extra.ideMessenger.llmStreamChat(streamAborter.signal, {
+        completionOptions,
+        title: selectedChatModel.title,
+        messages: compiledChatMessages,
+        legacySlashCommandData,
+        messageOptions: { precompiled: true },
+      });
       if (systemToolsFramework && activeTools.length > 0) {
         gen = interceptSystemToolCalls(
           gen,
@@ -302,86 +298,11 @@ export const streamNormalInput = createAsyncThunk<
     await preprocessToolCalls(dispatch, extra.ideMessenger, generatedCalls1);
 
     // 2. Evaluate tool policies and handle execution
-    const allAutoApproved = await evaluateToolPolicies(
+    const state2 = getState();
+    const generatedCalls2 = selectPendingToolCalls(state2);
+    const policyResults = await evaluateToolPolicies(
       dispatch,
-      getState,
-      activeTools,
-<<<<<<< HEAD
-      generatedCalls3,
-      toolPolicies,
-    );
-    const autoApprovedPolicies = policies.filter(
-      ({ policy }) => policy === "allowedWithoutPermission",
-    );
-    const needsApprovalPolicies = policies.filter(
-      ({ policy }) => policy === "allowedWithPermission",
-    );
 
-    // 4. Execute remaining tool calls
-    if (originalToolCalls.length === 0) {
-      dispatch(setInactive());
-    } else if (needsApprovalPolicies.length > 0) {
-      const builtInReadonlyAutoApproved = autoApprovedPolicies.filter(
-        ({ toolCallState }) =>
-          toolCallState.tool?.group === BUILT_IN_GROUP_NAME &&
-          toolCallState.tool?.readonly,
-      );
-
-      if (builtInReadonlyAutoApproved.length > 0) {
-        const state4 = getState();
-        if (streamAborter.signal.aborted || !state4.session.isStreaming) {
-          return;
-        }
-        await Promise.all(
-          builtInReadonlyAutoApproved.map(async ({ toolCallState }) => {
-            unwrapResult(
-              await dispatch(
-                callToolById({
-                  toolCallId: toolCallState.toolCallId,
-                  isAutoApproved: true,
-                  depth: depth + 1,
-                }),
-              ),
-            );
-          }),
-        );
-      }
-
-      dispatch(setInactive());
-    } else {
-      // auto stream cases increase thunk depth by 1 for debugging
-      const state4 = getState();
-      const generatedCalls4 = selectPendingToolCalls(state4);
-      if (streamAborter.signal.aborted || !state4.session.isStreaming) {
-        return;
-      }
-      if (generatedCalls4.length > 0) {
-        await Promise.all(
-          generatedCalls4.map(async ({ toolCallId }) => {
-            unwrapResult(
-              await dispatch(
-                callToolById({
-                  toolCallId,
-                  isAutoApproved: true,
-                  depth: depth + 1,
-                }),
-              ),
-            );
-          }),
-        );
-      } else {
-        for (const { toolCallId } of originalToolCalls) {
-          unwrapResult(
-            await dispatch(
-              streamResponseAfterToolCall({
-                toolCallId,
-                depth: depth + 1,
-              }),
-            ),
-          );
-        }
-      }
-=======
       extra.ideMessenger,
     );
 
@@ -392,7 +313,28 @@ export const streamNormalInput = createAsyncThunk<
     }
   },
 );
+=======
+
       extra.ideMessenger,
+      activeTools,
+      generatedCalls2,
+      state2.ui.toolSettings,
+    );
+
+    for (const result of policyResults) {
+      if (result.policy === "allowedWithoutPermission") {
+        dispatch(
+          callToolById({
+            toolCallId: result.toolCallState.toolCallId,
+            isAutoApproved: true,
+            depth,
+          }),
+        );
+      }
+    }
+
+    const allAutoApproved = policyResults.every(
+      ({ policy }) => policy === "allowedWithoutPermission",
     );
 
     // 3. If not all tools were auto-approved, set inactive
@@ -400,14 +342,6 @@ export const streamNormalInput = createAsyncThunk<
       dispatch(setInactive());
     }
 
-    // 4. Stream response after tool call (if any)
-    await streamResponseAfterToolCall(
-      dispatch,
-      getState,
-      extra.ideMessenger,
-      legacySlashCommandData,
-      depth,
-      systemMessages,
-    );
+    // 4. Stream response after tool call (if any) is handled by callToolById
+  },
 );
-
