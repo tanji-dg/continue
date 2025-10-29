@@ -39,7 +39,9 @@ export interface IIdeMessenger {
 
   request<T extends keyof FromWebviewProtocol>(
     messageType: T,
-    data: FromWebviewProtocol[T][0],
+    ...data: FromWebviewProtocol[T][0] extends any[]
+      ? FromWebviewProtocol[T][0]
+      : [FromWebviewProtocol[T][0]]
   ): Promise<WebviewSingleProtocolMessage<T>>;
 
   streamRequest<T extends keyof FromWebviewProtocol>(
@@ -51,9 +53,11 @@ export interface IIdeMessenger {
     GeneratorReturnType<FromWebviewProtocol[T][1]> | undefined
   >;
 
-  llmStreamChat(
-    msg: ToCoreProtocol["llm/streamChat"][0],
+  llmStreamChat<T extends "llm/streamChat">(
     cancelToken: AbortSignal,
+    ...msg: ToCoreProtocol[T][0] extends any[]
+      ? ToCoreProtocol[T][0]
+      : [ToCoreProtocol[T][0]]
   ): AsyncGenerator<ChatMessage[], PromptLog | undefined>;
 
   ide: IDE;
@@ -145,7 +149,9 @@ export class IdeMessenger implements IIdeMessenger {
 
   request<T extends keyof FromWebviewProtocol>(
     messageType: T,
-    data: FromWebviewProtocol[T][0],
+    ...data: FromWebviewProtocol[T][0] extends any[]
+      ? FromWebviewProtocol[T][0]
+      : [FromWebviewProtocol[T][0]]
   ): Promise<WebviewSingleMessage<T>> {
     const messageId = uuidv4();
 
@@ -158,7 +164,7 @@ export class IdeMessenger implements IIdeMessenger {
       };
       window.addEventListener("message", handler);
 
-      this.post(messageType, data, messageId);
+      this.post(messageType, data[0], messageId);
     });
   }
 
@@ -246,11 +252,13 @@ export class IdeMessenger implements IIdeMessenger {
     }
   }
 
-  async *llmStreamChat(
-    msg: ToCoreProtocol["llm/streamChat"][0],
+  async *llmStreamChat<T extends "llm/streamChat">(
     cancelToken: AbortSignal,
+    ...msg: ToCoreProtocol[T][0] extends any[]
+      ? ToCoreProtocol[T][0]
+      : [ToCoreProtocol[T][0]]
   ): AsyncGenerator<ChatMessage[], PromptLog | undefined> {
-    const gen = this.streamRequest("llm/streamChat", msg, cancelToken);
+    const gen = this.streamRequest("llm/streamChat", msg[0], cancelToken);
 
     let next = await gen.next();
     while (!next.done) {
