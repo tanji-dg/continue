@@ -201,10 +201,13 @@ export class MockIdeMessenger implements IIdeMessenger {
     ];
   }
 
-  async *llmStreamChat(
-    msg: ToCoreProtocol["llm/streamChat"][0],
+  async *llmStreamChat<T extends "llm/streamChat">(
     cancelToken: AbortSignal,
+    ...msg: ToCoreProtocol[T][0] extends any[]
+      ? ToCoreProtocol[T][0]
+      : [ToCoreProtocol[T][0]]
   ): AsyncGenerator<ChatMessage[], PromptLog | undefined> {
+    const actualMsg = msg[0];
     for (const response of this.chatResponse) {
       if (cancelToken.aborted) {
         console.log("MockIdeMessenger: Stream aborted");
