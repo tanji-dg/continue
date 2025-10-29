@@ -5,9 +5,8 @@ import {
   Tool,
   ToolCallState,
   TextMessagePart,
-  ToolPolicy,
-  DEFAULT_TOOL_SETTING,
 } from "core";
+import { ToolPolicy } from "@continuedev/terminal-security";
 import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { selectActiveTools } from "../selectors/selectActiveTools";
@@ -197,16 +196,13 @@ export const streamNormalInput = createAsyncThunk<
     const start = Date.now();
     const streamAborter = state.session.streamAborter;
     try {
-      let gen = extra.ideMessenger.llmStreamChat(
-        {
-          completionOptions,
-          title: selectedChatModel.title,
-          messages: compiledChatMessages,
-          legacySlashCommandData,
-          messageOptions: { precompiled: true },
-        },
-        streamAborter.signal,
-      );
+      let gen = extra.ideMessenger.llmStreamChat(streamAborter.signal, {
+        completionOptions,
+        title: selectedChatModel.title,
+        messages: compiledChatMessages,
+        legacySlashCommandData,
+        messageOptions: { precompiled: true },
+      });
       if (systemToolsFramework && activeTools.length > 0) {
         gen = interceptSystemToolCalls(
           gen,
@@ -301,11 +297,30 @@ export const streamNormalInput = createAsyncThunk<
     await preprocessToolCalls(dispatch, extra.ideMessenger, generatedCalls1);
 
     // 2. Evaluate tool policies and handle execution
-    const allAutoApproved = await evaluateToolPolicies(
+    const state2 = getState();
+    const generatedCalls2 = selectPendingToolCalls(state2);
+    const policyResults = await evaluateToolPolicies(
       dispatch,
-      getState,
-      activeTools,
       extra.ideMessenger,
+      activeTools,
+      generatedCalls2,
+      state2.ui.toolSettings,
+    );
+
+    for (const result of policyResults) {
+      if (result.policy === "allowedWithoutPermission") {
+        dispatch(
+          callToolById({
+            toolCallId: result.toolCallState.toolCallId,
+            isAutoApproved: true,
+            depth,
+          }),
+        );
+      }
+    }
+
+    const allAutoApproved = policyResults.every(
+      ({ policy }) => policy === "allowedWithoutPermission",
     );
 
     // 3. If not all tools were auto-approved, set inactive
@@ -313,14 +328,6 @@ export const streamNormalInput = createAsyncThunk<
       dispatch(setInactive());
     }
 
-    // 4. Stream response after tool call (if any)
-    await streamResponseAfterToolCall(
-      dispatch,
-      getState,
-      extra.ideMessenger,
-      legacySlashCommandData,
-      depth,
-      systemMessages,
-    );
+    // 4. Stream response after tool call (if any) is handled by callToolById
+  },
 );
-
