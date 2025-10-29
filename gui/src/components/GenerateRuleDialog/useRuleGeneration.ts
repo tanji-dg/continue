@@ -86,16 +86,13 @@ export function useRuleGeneration(
       const abortController = new AbortController();
 
       // Stream the response with createRuleBlock tool
-      const gen = ideMessenger.llmStreamChat(
-        {
-          messages,
-          completionOptions: {
-            tools: [createRuleBlock],
-          },
-          title: selectedChatModel.title,
+      const gen = ideMessenger.llmStreamChat(abortController.signal, {
+        messages,
+        completionOptions: {
+          tools: [createRuleBlock],
         },
-        abortController.signal,
-      );
+        title: selectedChatModel.title,
+      });
 
       let toolCallState: any = undefined;
 
