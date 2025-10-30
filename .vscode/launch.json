@@ -12,6 +12,7 @@
       "cwd": "${workspaceFolder}/extensions/vscode",
       "args": [
         // Pass a directory to manually test in
+        //"--folder-uri=vscode-remote://ssh-remote+egan/home/htanji/proj/kozekachi_ai/",
         "${workspaceFolder}/manual-testing-sandbox",
         "${workspaceFolder}/manual-testing-sandbox/test.js",
         //"d:/git/sysu-gitlab/pachi/ps_fw_base",
@@ -24,7 +25,7 @@
       ],
       "pauseForSourceMap": false,
       "outFiles": ["${workspaceFolder}/extensions/vscode/out/extension.js"],
-//      "preLaunchTask": "vscode-extension:build-with-packages",
+      //      "preLaunchTask": "vscode-extension:build-with-packages",
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
         // "CONTROL_PLANE_ENV": "local",
