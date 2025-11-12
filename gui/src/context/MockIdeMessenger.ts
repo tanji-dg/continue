@@ -207,7 +207,7 @@ export class MockIdeMessenger implements IIdeMessenger {
       ? ToCoreProtocol[T][0]
       : [ToCoreProtocol[T][0]]
   ): AsyncGenerator<ChatMessage[], PromptLog | undefined> {
-    const actualMsg = msg[0];
+    const actualMsg = msg;
     for (const response of this.chatResponse) {
       if (cancelToken.aborted) {
         console.log("MockIdeMessenger: Stream aborted");
