@@ -8,7 +8,7 @@ import { ConfigYaml, DevEventName } from "@continuedev/config-yaml";
 import * as JSONC from "comment-json";
 import dotenv from "dotenv";
 
-import * as iconv from 'iconv-lite';
+import * as iconv from "iconv-lite";
 import { IdeType, SerializedContinueConfig } from "../";
 import { defaultConfig } from "../config/default";
 import Types from "../config/types";
@@ -269,7 +269,9 @@ function editConfigJson(
 
 function editConfigYaml(callback: (config: ConfigYaml) => ConfigYaml): void {
   const configPath = getConfigYamlPath();
-  const config = fs.readFileSync(configPath, "utf8");
+  const bytes = fs.readFileSync(configPath);
+  const detectedEncoding = SupportSJIS.detectEncoding(bytes);
+  const config = iconv.decode(bytes, detectedEncoding);
   let configYaml = YAML.parse(config);
   // Check if it's an object
   if (typeof configYaml === "object" && configYaml !== null) {
@@ -413,7 +415,8 @@ export function getGlobalPromptsPath(): string {
 
 export function readAllGlobalPromptFiles(
   folderPath: string = getGlobalPromptsPath(),
-): Array<{ path: string; content: string }> { // プロパティ順序を変更
+): Array<{ path: string; content: string }> {
+  // プロパティ順序を変更
   if (!fs.existsSync(folderPath)) {
     return [];
   }
@@ -431,9 +434,9 @@ export function readAllGlobalPromptFiles(
       const detectedEncoding = SupportSJIS.detectEncoding(bytes);
       const decoded = iconv.decode(bytes, detectedEncoding);
 
-      promptFiles.push({ 
-        path: filepath,  // pathを先に
-        content: decoded // contentを後に
+      promptFiles.push({
+        path: filepath, // pathを先に
+        content: decoded, // contentを後に
       });
     }
   });
