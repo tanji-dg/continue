@@ -325,19 +325,6 @@ export const streamNormalInput = createAsyncThunk<
     const toolPolicies = state3.ui.toolSettings;
     const policies = await evaluateToolPolicies(
       dispatch,
-
-      extra.ideMessenger,
-    );
-
-    // 3. If not all tools were auto-approved, set inactive
-    if (!allAutoApproved) {
-      dispatch(setInactive());
->>>>>>> 04bc7e5b8 (rebase用まとめ)
-    }
-  },
-);
-=======
-
       extra.ideMessenger,
       activeTools,
       generatedCalls3,
