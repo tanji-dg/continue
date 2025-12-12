@@ -579,105 +579,55 @@ void (async () => {
     ]);
   } else {
     // Check if platform-specific packages already exist (installed by package-all.js)
-    const esbuildDir = path.join(__dirname, "..", "node_modules", "@esbuild", target);
+    const esbuildDir = path.join(
+      __dirname,
+      "..",
+      "node_modules",
+      "@esbuild",
+      target,
+    );
     const lancedbSuffix = isWinTarget ? "-msvc" : isLinuxTarget ? "-gnu" : "";
-    const lancedbDir = path.join(__dirname, "..", "node_modules", "@lancedb", `vectordb-${target}${lancedbSuffix}`);
-    
+    const lancedbDir = path.join(
+      __dirname,
+      "..",
+      "node_modules",
+      "@lancedb",
+      `vectordb-${target}${lancedbSuffix}`,
+    );
+
     if (!fs.existsSync(esbuildDir)) {
       // If platform-specific esbuild doesn't exist, install generic one
       console.log("[info] npm installing esbuild binary");
       await installAndCopyNodeModules("esbuild@0.17.19", "@esbuild");
     } else {
-      // Check if platform-specific packages already exist (installed by package-all.js)
-      const esbuildDir = path.join(
-        __dirname,
-        "..",
-        "node_modules",
-        "@esbuild",
-        target,
+      console.log(
+        "[info] Using existing platform-specific esbuild for " + target,
       );
-      const lancedbSuffix = isWinTarget ? "-msvc" : isLinuxTarget ? "-gnu" : "";
-      const lancedbDir = path.join(
-        __dirname,
-        "..",
-        "node_modules",
-        "@lancedb",
-        "vectordb-" + target + lancedbSuffix,
-      );
-
-      if (!fs.existsSync(esbuildDir)) {
-        // If platform-specific esbuild doesn't exist, install generic one
-        console.log("[info] npm installing esbuild binary");
-        await installAndCopyNodeModules("esbuild@0.17.19", "@esbuild");
-      } else {
-        console.log(
-          "[info] Using existing platform-specific esbuild for " + target,
-        );
-      }
-
-      if (!fs.existsSync(lancedbDir)) {
-        // If platform-specific lancedb doesn't exist, install it
-        const lancedbPackage = {
-          "win32-x64": "@lancedb/vectordb-win32-x64-msvc",
-          "linux-x64": "@lancedb/vectordb-linux-x64-gnu",
-          "darwin-x64": "@lancedb/vectordb-darwin-x64",
-        }[target];
-
-        if (lancedbPackage) {
-          console.log(
-            "[info] Installing platform-specific lancedb binary: " + lancedbPackage,
-          );
-          await installAndCopyNodeModules(lancedbPackage, "@lancedb");
-        }
-      } else {
-        console.log(
-          "[info] Using existing platform-specific lancedb for " + target,
-        );
-      }
     }
-    
+
     if (!fs.existsSync(lancedbDir)) {
       // If platform-specific lancedb doesn't exist, install it
       const lancedbPackage = {
         "win32-x64": "@lancedb/vectordb-win32-x64-msvc",
-        "linux-x64": "@lancedb/vectordb-linux-x64-gnu", 
+        "linux-x64": "@lancedb/vectordb-linux-x64-gnu",
         "darwin-x64": "@lancedb/vectordb-darwin-x64",
       }[target];
-      
-      if (lancedbPackage) {
-        console.log("Installing platform-specific lancedb binary: " + lancedbPackage);
-        await installAndCopyNodeModules(lancedbPackage, "@lancedb");
-      }
-    } else {
-      console.log("Using existing platform-specific lancedb for " + target);
-    }
-    }
-    
-    if (!fs.existsSync(lancedbDir)) {
-      // If platform-specific lancedb doesn't exist, install it
-      const lancedbPackage = {
-        "win32-x64": "@lancedb/vectordb-win32-x64-msvc",
-        "linux-x64": "@lancedb/vectordb-linux-x64-gnu", 
-        "darwin-x64": "@lancedb/vectordb-darwin-x64",
-      }[target];
-      
-      if (lancedbPackage) {
-        console.log(`[info] Installing platform-specific lancedb binary: ${lancedbPackage}`);
-        await installAndCopyNodeModules(lancedbPackage, "@lancedb");
-      }
-    } else {
-      console.log(`[info] Using existing platform-specific lancedb for ${target}`);
-    }
-  } else {
-    console.warn(
-      `[warn] No LanceDB package mapping found for target ${target}`,
-    );
-  }
 
-  if (!skipInstalls) {
-    await copySqlite(target);
-  } else {
-    console.log("[info] Skipping sqlite download because SKIP_INSTALLS=true");
+      if (lancedbPackage) {
+        console.log(
+          `[info] Installing platform-specific lancedb binary: ${lancedbPackage}`,
+        );
+        await installAndCopyNodeModules(lancedbPackage, "@lancedb");
+      } else {
+        console.warn(
+          `[warn] No LanceDB package mapping found for target ${target}`,
+        );
+      }
+    } else {
+      console.log(
+        `[info] Using existing platform-specific lancedb for ${target}`,
+      );
+    }
   }
 
   // Always install platform-specific sqlite3 binary for cross-platform builds
@@ -810,7 +760,8 @@ void (async () => {
 
     // onnx runtime bindngs
     `bin/napi-v3/${os}/${arch}/onnxruntime_binding.node`,
-    `bin/napi-v3/${os}/${arch}/${ isMacTarget
+    `bin/napi-v3/${os}/${arch}/${
+      isMacTarget
         ? "libonnxruntime.1.14.0.dylib"
         : isLinuxTarget
           ? "libonnxruntime.so.1.14.0"
