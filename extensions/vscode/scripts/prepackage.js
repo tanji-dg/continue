@@ -572,7 +572,17 @@ void (async () => {
   };
 
   const packageToInstall = lancedbPackagesByTarget[target];
+  let packageDirName;
+  let expectedPackagePath;
+
   if (packageToInstall) {
+    packageDirName = packageToInstall.split("/")[1];
+    expectedPackagePath = path.join(
+      __dirname,
+      "..",
+      "node_modules",
+      packageToInstall,
+    );
     await Promise.all([
       copySqlite(target),
       installAndCopyNodeModules(packageToInstall, "@lancedb"),
